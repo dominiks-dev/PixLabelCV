@@ -1,0 +1,12 @@
+A:\Projekte\Github\PixLabelCV\imgui\imgui.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui.obj
+A:\Projekte\Github\PixLabelCV\imgui\imgui_demo.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui_demo.obj
+A:\Projekte\Github\PixLabelCV\imgui\imgui_draw.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui_draw.obj
+A:\Projekte\Github\PixLabelCV\imgui\imgui_tables.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui_tables.obj
+A:\Projekte\Github\PixLabelCV\imgui\imgui_widgets.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui_widgets.obj
+A:\Projekte\Github\PixLabelCV\sources\ImageProcessing.cpp;A:\Projekte\Github\PixLabelCV\Release\ImageProcessing.obj
+A:\Projekte\Github\PixLabelCV\sources\imgui_impl_dx11.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui_impl_dx11.obj
+A:\Projekte\Github\PixLabelCV\sources\imgui_impl_win32.cpp;A:\Projekte\Github\PixLabelCV\Release\imgui_impl_win32.obj
+A:\Projekte\Github\PixLabelCV\sources\LabelState.cpp;A:\Projekte\Github\PixLabelCV\Release\LabelState.obj
+A:\Projekte\Github\PixLabelCV\sources\load_image.cpp;A:\Projekte\Github\PixLabelCV\Release\load_image.obj
+A:\Projekte\Github\PixLabelCV\sources\main.cpp;A:\Projekte\Github\PixLabelCV\Release\main.obj
+A:\Projekte\Github\PixLabelCV\sources\user_interaction.cpp;A:\Projekte\Github\PixLabelCV\Release\user_interaction.obj
