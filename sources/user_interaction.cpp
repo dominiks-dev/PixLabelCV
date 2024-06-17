@@ -22,31 +22,31 @@
 
 #pragma once
 #include "user_interaction.h"
- 
+
 bool dragging(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Marker& marker, DrawCircle& circ, int max_width, int max_height, int& dragging_point) {
 	//DS: remember this function only gets called when user is already dragging  
 	bool is_drawing = false;
 
-	if ((poly.closed && current_draw_shape == PolygonD) // for polygon
-				|| current_draw_shape == MarkerPointsD) {  // for maker points
+	if((poly.closed && current_draw_shape == PolygonD) // for polygon
+	   || current_draw_shape == MarkerPointsD) {  // for maker points
 		// check if a point was clicked to be dragged
-		if (dragging_point < 0) { // means no point is dragged yet 
+		if(dragging_point < 0) { // means no point is dragged yet 
 			//DS: for loops suffice here, as there should be no points for not active shape
-			
+
 			// drag point next to mouse down position
-			for (size_t i = 0; i < poly.points.size(); i++) {
-				ImVec2 pt = poly.points.at(i); 
-				if (inRange(pt, currentPoint, 15)) {
+			for(size_t i = 0; i < poly.points.size(); i++) {
+				ImVec2 pt = poly.points.at(i);
+				if(inRange(pt, currentPoint, 15)) {
 					dragging_point = i;
 					LabelState::Instance().drawingFinished = false;
 					// isDrawing = true;
 				}
 			}
 			// drag polyon mid point
-			if(inRange(currentPoint, poly.mid, 15)) 
+			if(inRange(currentPoint, poly.mid, 15))
 				dragging_point = poly.POLYMIDPOINT;
 			// select a marker point to drag
-			for (size_t i = 0; i < marker.points.size(); i++) { // no if condition here because either of the two is empty
+			for(size_t i = 0; i < marker.points.size(); i++) { // no if condition here because either of the two is empty
 				if(inRange(marker.points.at(i), currentPoint, 15)) {
 					dragging_point = i;
 					// isDrawing = true;
@@ -55,42 +55,40 @@ bool dragging(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Ma
 			}
 		}
 		// adjust the point while dragging
-		else if (dragging_point >= 0) {
-			if (current_draw_shape == PolygonD)
+		else if(dragging_point >= 0) {
+			if(current_draw_shape == PolygonD)
 				// check first if mid is dragged and adjust all points as necessary
-				if (dragging_point == poly.POLYMIDPOINT) { 
+				if(dragging_point == poly.POLYMIDPOINT) {
 					// stop the dragging if a point of the polygon would go out of bounds - probably there may be a better solution 
 					bool couldMove = poly.Move(currentPoint, ImVec2(max_width, max_height));
-					if (!couldMove) dragging_point = -1; 
-				}
-				else // select dragged point by index
+					if(!couldMove) dragging_point = -1;
+				} else // select dragged point by index
 					poly.points.at(dragging_point) = currentPoint;
-			else if (current_draw_shape == MarkerPointsD) { 
-				marker.points.at(dragging_point) = ImVec2(currentPoint.x, currentPoint.y); 
+			else if(current_draw_shape == MarkerPointsD) {
+				marker.points.at(dragging_point) = ImVec2(currentPoint.x, currentPoint.y);
 			}
 			is_drawing = true;
 		}
 	}
 	// dragging circle
-	else if (current_draw_shape == CircleD && circ.out_x != -1) {  // check that both points are set
+	else if(current_draw_shape == CircleD && circ.out_x != -1) {  // check that both points are set
 		// select point to drag
-		if (dragging_point < 0) { 
+		if(dragging_point < 0) {
 			//if (norm2d(ImVec2(circ.mid_x, circ.mid_y), currentPoint) < 15)
-			if (inRange(ImVec2(circ.mid_x, circ.mid_y), currentPoint, 15))
-				dragging_point = 0; 
-			else if (inRange(ImVec2(circ.out_x, circ.out_y), currentPoint, 15)) 
+			if(inRange(ImVec2(circ.mid_x, circ.mid_y), currentPoint, 15))
+				dragging_point = 0;
+			else if(inRange(ImVec2(circ.out_x, circ.out_y), currentPoint, 15))
 				dragging_point = 1;
 		}
 		// adjust the point while dragging
-		else if (dragging_point == 0) {
+		else if(dragging_point == 0) {
 			is_drawing = true;
 			// adjust outer point on circle first!
 			circ.out_x += currentPoint.x - circ.mid_x;
 			circ.out_y += currentPoint.y - circ.mid_y;
 			circ.mid_x = currentPoint.x;
 			circ.mid_y = currentPoint.y;
-		}
-		else if (dragging_point == 1) {
+		} else if(dragging_point == 1) {
 			is_drawing = true;
 			circ.out_x = currentPoint.x;
 			circ.out_y = currentPoint.y;
@@ -101,110 +99,105 @@ bool dragging(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Ma
 
 void double_clicked(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Marker& marker, int& dragging_point) {
 
-	if (current_draw_shape == PolygonD && poly.closed) {
+	if(current_draw_shape == PolygonD && poly.closed) {
 		// Add point to polygon
-		if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+		if(ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
 			double distance, min_distance = DBL_MAX, second_min_distance = DBL_MAX;
-			int closest=-1, second_closest=-1
+			int closest = -1, second_closest = -1
 				;
-			for (int i = 0; i < poly.points.size(); i++) {
+			for(int i = 0; i < poly.points.size(); i++) {
 				ImVec2 pt = poly.points.at(i);
 				distance = norm2d(pt, currentPoint);
 				/*range = sqrt(pow(pt.x - currentPoint.x, 2) +
 				pow(pt.y - currentPoint.y, 2));*/
-				if (distance < min_distance) { 
+				if(distance < min_distance) {
 					second_min_distance = min_distance;
 					second_closest = closest;
 
 					closest = i;
 					min_distance = distance;
-				}
-				else if (distance < second_min_distance) {
+				} else if(distance < second_min_distance) {
 					// Update second closest if this point is closer than the current second closest
 					second_min_distance = distance;
 					second_closest = i;
 				}
 			}
 			// check that the point is not already in the vector by min range
-			if (min_distance > 2) {
+			if(min_distance > 2) {
 				// add the new point between the two closest   - DS: 16.1.: this is still not optimal --> check the line between points and include this into the next (comparison) metric
-				if (closest < second_closest) {
+				if(closest < second_closest) {
 					// If the closest point comes before the second closest in the array
 					//insertPosition = closest + 1;
 					poly.points.insert(poly.points.begin() + second_closest, currentPoint);
-				}
-				else {
+				} else {
 					// If the second closest point comes before or is the same as the closest
 					//insertPosition = closest;
 					poly.points.insert(poly.points.begin() + closest, currentPoint);
-				} 
+				}
 			}
 		}
 		// delete point from polygon
-		else if (poly.closed) {
+		else if(poly.closed) {
 			// use iterator to go over all elements
-			for (auto it = poly.points.begin(); it != poly.points.end(); /* empty */) {
+			for(auto it = poly.points.begin(); it != poly.points.end(); /* empty */) {
 				ImVec2 pt = *it;
 				double d = norm2d(pt, currentPoint);
-				if (d <= 12) {
+				if(d <= 12) {
 					it = poly.points.erase(it); // erase returns the iterator to the next element
 					break; // leaves the loop after deleting one element -> rest will be unchanged
-				}
-				else {
+				} else {
 					++it; // only increment the iterator if you didn't erase
 				}
 			}
 		}
 	}
 	// delete points form markers
-	else if (current_draw_shape == MarkerPointsD) {
+	else if(current_draw_shape == MarkerPointsD) {
 		bool removed = marker.RemovePoint(currentPoint);
-		if (removed) dragging_point = -1;
+		if(removed) dragging_point = -1;
 	}
 }
 
 bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* poly, Marker* m, DrawEllipse* ell,
-	DrawCircle* c, int dragging_point) {
+					DrawCircle* c, int dragging_point) {
 	bool IsDrawing = false;
 	// Not Circle
-	if (current_draw_shape == PolygonD || current_draw_shape == MarkerPointsD || current_draw_shape == ArcD) {
+	if(current_draw_shape == PolygonD || current_draw_shape == MarkerPointsD || current_draw_shape == ArcD) {
 		// check that the same point is not added twice
-		if (std::any_of(poly->points.begin(), poly->points.end(),
-			[&](const ImVec2& pt) {
-				if (pt.x == currentPoint.x && pt.y == currentPoint.y)
-					return true;
-				else
-					return false;
-			})) {
+		if(std::any_of(poly->points.begin(), poly->points.end(),
+		   [&] (const ImVec2& pt) {
+			   if(pt.x == currentPoint.x && pt.y == currentPoint.y)
+				   return true;
+			   else
+				   return false;
+		   })) {
 			std::cout << currentPoint.x << ", " << currentPoint.y
 				<< " is present in the vector\n";
-		}
-		else if (current_draw_shape == MarkerPointsD) {
-			if (dragging_point < 0 && m->deleted != true) {	// add new point
+		} else if(current_draw_shape == MarkerPointsD) {
+			if(dragging_point < 0 && m->deleted != true) {	// add new point
 				m->points.push_back(ImVec2(currentPoint.x, currentPoint.y));
 				m->labels.push_back(LabelState::Instance().GetActiveClass());
 			}
-			if (m->Count() > 0) {
+			if(m->Count() > 0) {
 				LabelState::Instance().drawingFinished = true;
 			}
 			m->deleted = false; // reset 
-		}
-		else { // Polygon and circle 
+		} else { // Polygon and circle 
 			double distance;
 			bool add_new_point = false;
 
 			// check if click was next to already set point --> interpret it
 			// as closing the polygon (at point 0) or wanting to drag the
 			// point
-			for (int i = 0; i < poly->points.size(); i++) {
+			for(int i = 0; i < poly->points.size(); i++) {
 				ImVec2 pt = poly->points.at(i);
 				distance = norm2d(pt, currentPoint);
-				if (distance <= 15) {
+				if(distance <= 15) {
 					std::cout << "Distance to closest point " << i << " = "
 						<< distance << "\n";
 
 					// close polygon if user clicks on first point
-					if (i == 0 && poly->closed == false) {
+					if(i == 0 && poly->closed == false) {
 						poly->closed = true;
 						LabelState::Instance().drawingFinished = true;
 						// calculate Polygon mid point
@@ -212,42 +205,40 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 
 						break;
 					}
-				}
-				else if (poly->closed == false) {  // add the new point
+				} else if(poly->closed == false) {  // add the new point
 					add_new_point = true;
 					IsDrawing = true;
 				}
 			}
-			if (add_new_point || poly->points.size() == 0) {
+			if(add_new_point || poly->points.size() == 0) {
 				poly->points.push_back(currentPoint);
 				// std::cout << "added Point " << currentPoint.x << ", " << currentPoint.y << " to vector\n";
 				// recalculate midpoint if further point is added 
-				if (poly->closed) poly->mid = calculateCentroid(poly->points);
+				if(poly->closed) poly->mid = calculateCentroid(poly->points);
 
 				// LabelState::Instance().drawingFinished==true; --> when polygon is complete
 				IsDrawing = true;
 			}
 
 			// DS: first implementation of ellipse - copy points of polygon
-			if (current_draw_shape == 2 && ell->points.size() < 3) {
+			if(current_draw_shape == 2 && ell->points.size() < 3) {
 				ell->points = std::vector<ImVec2>(poly->points);
 				IsDrawing = true;
 			}
 		}
 	}  // end poly or ellipse
-	else if (current_draw_shape == CircleD) {
+	else if(current_draw_shape == CircleD) {
 		// define points for circle
 		// check that the same point is not added twice
-		if (c->mid_x == -1 &&
-			c->mid_y == -1) {  // add First point for new circle
+		if(c->mid_x == -1 &&
+		   c->mid_y == -1) {  // add First point for new circle
 			c->mid_x = currentPoint.x;
 			c->mid_y = currentPoint.y;
 			IsDrawing = true; // so that middle point is displayed (later)
 			LabelState::Instance().drawingFinished = false; // reset drawing finished flag (when clicking next point)
 		}
-		// 
-		else if ((c->out_x == -1 && c->out_y == -1) &&
-			(c->mid_x != currentPoint.x)) {  // point in vector is not the same
+		else if((c->out_x == -1 && c->out_y == -1) &&
+				(c->mid_x != currentPoint.x)) {  // point in vector is not the same
 			c->out_x = currentPoint.x;
 			c->out_y = currentPoint.y;
 			LabelState::Instance().drawingFinished = true;
@@ -258,66 +249,67 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 }
 
 // Scale the points when zooming in and out [--> they are directly used in the gui and converted to CV later]
-void scalePoints(int current_draw_shape, double zoom_ratio, DrawPolygon& p, Marker& marker, DrawCircle& c, std::vector<PointRad>& lines) {
-	if (current_draw_shape == PolygonD) {
-		for (int i = 0; i < p.points.size(); i++) {
+void scalePoints(int current_draw_shape, double zoom_ratio, DrawRect d,  DrawPolygon& p, Marker& marker, DrawCircle& c, std::vector<PointRad>& lines) {
+	if(current_draw_shape == RectangleD) {
+		d.top *= zoom_ratio;
+		d.left *= zoom_ratio;
+		d.bottom *= zoom_ratio;
+		d.right *= zoom_ratio;
+	}
+	else if(current_draw_shape == PolygonD) {
+		for(int i = 0; i < p.points.size(); i++) {
 			p.points.at(i).x *= zoom_ratio;
 			p.points.at(i).y *= zoom_ratio;
 		}
 		p.mid.x *= double(zoom_ratio);
 		p.mid.y *= double(zoom_ratio);
-	}
-	else if (current_draw_shape == MarkerPointsD) {
+	} else if(current_draw_shape == MarkerPointsD) {
 		marker.Scale(zoom_ratio);
-	}
-	else if (current_draw_shape == CircleD) {
+	} else if(current_draw_shape == CircleD) {
 		c.mid_x *= zoom_ratio;
 		c.mid_y *= zoom_ratio;
 		c.out_x *= zoom_ratio;
 		c.out_y *= zoom_ratio;
-	}
-	else if(current_draw_shape == CutsD) { // scale just GraphCut not Brush by now 
+	} else if(current_draw_shape == CutsD) { // scale just GraphCut not Brush by now 
 		for(int i = 0; i < lines.size(); i++) {
 			lines.at(i).pt.x *= zoom_ratio;
-			lines.at(i).pt.y *= zoom_ratio; 
-			lines.at(i).rad * zoom_ratio >=1.0 ? lines.at(i).rad *= zoom_ratio : 1.00; // make sure not to scale the lines smaller than 1.0 
+			lines.at(i).pt.y *= zoom_ratio;
+			lines.at(i).rad* zoom_ratio >= 1.0 ? lines.at(i).rad *= zoom_ratio : 1.00; // make sure not to scale the lines smaller than 1.0 
 		}
 	}
 }
 
 // User Input to CV_parameters
 void CreateImageProcParam(int current_draw_shape, DrawRect& draw_rect, ImageProcParameters& ImPar, DrawPolygon& poly, double current_zoom,
-	Marker m, std::vector<PointRad>& brush_points_rad, const ImVec2& position_correction, DrawCircle c, ImVec2& f_point, int current_fill_mode, int low, int up, bool ff_use_gray) {
+						  Marker m, std::vector<PointRad>& brush_points_rad, const ImVec2& position_correction, DrawCircle c, ImVec2& f_point, int current_fill_mode, int low, int up, bool ff_use_gray) {
 
 	std::vector<std::pair<int, int>> _dummy;
-	if (current_draw_shape == RectangleD) {  
-		int points[4] = { draw_rect.left, draw_rect.top, draw_rect.right,
-			draw_rect.right }; 
+	if(current_draw_shape == RectangleD) {		
+		int points[4] = { (draw_rect.left - position_correction.x) / current_zoom, 
+			(draw_rect.top - position_correction.y) / current_zoom,  
+			(draw_rect.right - position_correction.x) / current_zoom,	
+			(draw_rect.bottom - position_correction.y) / current_zoom }; 
 		ImPar.addROI(points, std::vector<std::pair<int, int>>(), current_draw_shape);
-	}
-	else if (current_draw_shape == PolygonD) {
+	} else if(current_draw_shape == PolygonD) {
 		// conversion from ImVec2 to std::pair
 		std::vector<std::pair<int, int>> pPs;
 		//for each (auto pP in poly_points) { //MSVC 
-		for (auto pP : poly.points) { // clang
+		for(auto pP : poly.points) { // clang
 			pPs.push_back(std::pair(pP.x / current_zoom, pP.y / current_zoom));
 		}
 		ImPar.addPolygonPoints(pPs, current_draw_shape);
-	}
-	else if (current_draw_shape == MarkerPointsD) {
+	} else if(current_draw_shape == MarkerPointsD) {
 		// conversion from ImVec2 to std::pair
 		std::vector<std::tuple<int, int, int>> mps;
 		//for each (auto m in markers) { // MSVC
 		//for (auto m : markers) { // clang
-		for (size_t i = 0; i < m.Count(); i++) {
-			mps.push_back(std::tuple<int, int, int>(m.points[i].x / current_zoom, m.points[i].y / current_zoom, m.labels[i])); 
+		for(size_t i = 0; i < m.Count(); i++) {
+			mps.push_back(std::tuple<int, int, int>(m.points[i].x / current_zoom, m.points[i].y / current_zoom, m.labels[i]));
 		}
 		ImPar.addMarkers(mps, current_draw_shape);
-	}
-	else if (current_draw_shape == BrushD || current_draw_shape == CutsD) {
+	} else if(current_draw_shape == BrushD || current_draw_shape == CutsD) {
 		ImPar.addBrushPoints(brush_points_rad, current_draw_shape, current_zoom);
-	}
-	else if (current_draw_shape == CircleD) {  // circle
+	} else if(current_draw_shape == CircleD) {  // circle
 		int points[] = { (int)(c.mid_x / current_zoom), (int)(c.mid_y / current_zoom),
 			(int)(c.out_x / current_zoom), (int)(c.out_y / current_zoom) };
 		ImPar.addROI(points, _dummy, current_draw_shape);
@@ -330,58 +322,65 @@ void CreateImageProcParam(int current_draw_shape, DrawRect& draw_rect, ImageProc
 
 // Display the drawn shapes in the GUIs
 void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shape, DrawRect& draw_rect, ImVec2& mousePositionAbsolute, ImVec2& screenPositionAbsolute,
-					int snap_to_border_distance, int image_width, Zoom& zoom, int image_height, DrawRect& cv_rect, bool is_drawing_brush, std::vector<PointRad>& brush_points_rad,
-					float alpha, DrawPolygon& poly, Marker& marker, DrawCircle& circ, DrawEllipse& ell) {
+					int snap_to_border_distance, int image_width, Zoom& zoom, int image_height, bool is_drawing_brush, std::vector<PointRad>& brush_points_rad, float alpha,
+					DrawPolygon& poly, Marker& marker, DrawCircle& circ, DrawEllipse& ell) {
 	// release the point when dragging is finished --> moved outside of (is Hovered)
 	if(ImGui::IsMouseReleased(ImGuiMouseButton_Left) &&
 	   (dragging_point >= 0)) {
 		dragging_point = -1;
 		is_drawing = false;
 		LabelState::Instance().drawingFinished = true;
-	}
+	} 
 
-	// finsh drawing Rect (also when releasing mouse button outside of img)
-	else if(current_draw_shape == RectangleD && !ImGui::IsMouseDown(ImGuiMouseButton_Left)
-			&& is_drawing == true) {
-		// finish drawing rectangle on mouse release
-		draw_rect.right = mousePositionAbsolute.x;
-		draw_rect.bottom = mousePositionAbsolute.y;
+	// drawing retangle
+	else if(current_draw_shape == RectangleD) {
 
-		// make sure that the rectangle is aligned correctly - if not switch x and/or y
-		if(draw_rect.right < draw_rect.left) {
-			auto temp = draw_rect.left;
-			draw_rect.left = draw_rect.right;
-			draw_rect.right = temp;
+		//if(ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+		//	if(!is_drawing) {  // when starting to draw
+		//		draw_rect.left = mousePositionAbsolute.x;
+		//		draw_rect.top = mousePositionAbsolute.y;  
+		//	} else {  // while drawing
+		//		draw_rect.right = mousePositionAbsolute.x;
+		//		draw_rect.bottom = mousePositionAbsolute.y;
+		//	}
+		//	is_drawing = true;
+		//}
+		// finsh drawing Rect (also when releasing mouse button outside of img)
+		//if(current_draw_shape == RectangleD && is_drawing){
+		if(current_draw_shape == RectangleD && !ImGui::IsMouseDown(ImGuiMouseButton_Left)
+				&& is_drawing == true) {
+			// finish drawing rectangle on mouse release
+			draw_rect.right = mousePositionAbsolute.x;
+			draw_rect.bottom = mousePositionAbsolute.y;
+
+			// make sure that the rectangle is aligned correctly - if not switch x and/or y
+			if(draw_rect.right < draw_rect.left) {
+				auto temp = draw_rect.left;
+				draw_rect.left = draw_rect.right;
+				draw_rect.right = temp;
+			}
+			if(draw_rect.bottom < draw_rect.top) {
+				auto temp = draw_rect.top;
+				draw_rect.top = draw_rect.bottom;
+				draw_rect.bottom = temp;
+			}
+
+			// snap to border here! - if distance is smaller than the snap distance --> consider screenPosition!
+			// Note: for upper left zoom should have no effect (because screenPositionAbsolute should go from 8 to -xxxx)
+			draw_rect.left = (draw_rect.left - screenPositionAbsolute.x) < snap_to_border_distance ? screenPositionAbsolute.x : draw_rect.left; // this includes negative x
+			draw_rect.top = (draw_rect.top - screenPositionAbsolute.y) < snap_to_border_distance ? screenPositionAbsolute.y : draw_rect.top;
+
+			int distance_border_x = image_width * zoom.current + screenPositionAbsolute.x - draw_rect.right; // rightmost coord of the image - the point clicked
+			int distance_border_y = image_height * zoom.current + screenPositionAbsolute.y - draw_rect.bottom;
+			// if closer to rigth border then the snap distance set to the image with (and adjust to transform)
+			draw_rect.right = distance_border_x <= snap_to_border_distance ?
+				image_width * zoom.current + screenPositionAbsolute.x : draw_rect.right;
+			draw_rect.bottom = distance_border_y <= snap_to_border_distance ?
+				image_height * zoom.current + screenPositionAbsolute.y : draw_rect.bottom;
+
+			LabelState::Instance().drawingFinished = true;
+			is_drawing = false;
 		}
-		if(draw_rect.bottom < draw_rect.top) {
-			auto temp = draw_rect.top;
-			draw_rect.top = draw_rect.bottom;
-			draw_rect.bottom = temp;
-		}
-
-		// snap to border here! - if distance is smaller than the snap distance --> consider screenPosition!
-		// Note: for upper left zoom should have no effect (because screenPositionAbsolute should go from 8 to -xxxx)
-		draw_rect.left = (draw_rect.left - screenPositionAbsolute.x) < snap_to_border_distance ? screenPositionAbsolute.x : draw_rect.left; // this includes negative x
-		draw_rect.top = (draw_rect.top - screenPositionAbsolute.y) < snap_to_border_distance ? screenPositionAbsolute.y : draw_rect.top;
-
-		int distance_border_x = image_width * zoom.current + screenPositionAbsolute.x - draw_rect.right; // rightmost coord of the image - the point clicked
-		int distance_border_y = image_height * zoom.current + screenPositionAbsolute.y - draw_rect.bottom;
-		// if closer to rigth border then the snap distance set to the image with (and adjust to transform)
-		draw_rect.right = distance_border_x <= snap_to_border_distance ?
-			image_width * zoom.current + screenPositionAbsolute.x : draw_rect.right;
-		draw_rect.bottom = distance_border_y <= snap_to_border_distance ?
-			image_height * zoom.current + screenPositionAbsolute.y : draw_rect.bottom;
-
-
-		// convert to cvRect (maybe do this later) 
-		// --> adding to image proc parameters - with respect to zoom! 
-		cv_rect.left = (draw_rect.left - screenPositionAbsolute.x) / zoom.current;
-		cv_rect.top = (draw_rect.top - screenPositionAbsolute.y) / zoom.current;
-		cv_rect.right = (draw_rect.right - screenPositionAbsolute.x) / zoom.current;
-		cv_rect.bottom = (draw_rect.bottom - screenPositionAbsolute.y) / zoom.current;
-
-		LabelState::Instance().drawingFinished = true;
-		is_drawing = false;
 	} // END finish drawing rect
 
 	// Draw brush
@@ -483,7 +482,7 @@ void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shap
 					ImVec2(circ.mid_x + screenPositionAbsolute.x,
 					circ.mid_y + screenPositionAbsolute.y),
 					radius, IM_COL32(255, 255, 0, 255),
-					50);  
+					50);
 				// the dragging point on the outer circle
 				draw_list->AddCircle(
 					ImVec2(circ.out_x + screenPositionAbsolute.x,

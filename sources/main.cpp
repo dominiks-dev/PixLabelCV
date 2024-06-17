@@ -1,6 +1,6 @@
 /*
  * This file is part of PixLabelCV.
- *  
+ *
  * Copyright (C) 2024 Dominik Schraml
  *
  * PixLabelCV is free software: you can redistribute it and/or modify
@@ -10,7 +10,7 @@
  *
  * Alternatively, commercial licenses are available. Please contact SQB Ilmenau
  * at olaf.glaessner@sqb-ilmenau.de or dominik.schraml@sqb-ilmenau.de for more details.
- * 
+ *
  * PixLabelCV is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with PixLabelCV. If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 
 #pragma once
 #include <d3d11.h>
@@ -67,8 +67,7 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-cv::UMat ApplyCVOperation(DrawRect rect, float* color, ImageProcParameters params, CvOperation op);
-
+cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation op);
 
 
 // Main code
@@ -180,7 +179,7 @@ int main(int, char**) {
 	static int last_draw_shape = 0;
 	static bool drawClassRegion;
 	DrawRect draw_rect = { -1, -1, -1, -1 };
-	DrawRect cv_rect = { -1, -1, -1, -1 };
+	//DrawRect cv_rect = { -1, -1, -1, -1 };
 	Marker marker;
 	DrawEllipse ell;
 	DrawCircle circ;
@@ -202,7 +201,7 @@ int main(int, char**) {
 	static bool display_help_window = false;
 	static bool is_drawing = false;
 	static bool reset_gui = false;
-	static bool save_key = false; 
+	static bool save_key = false;
 	const char* drawshape[] = { "Rectangle", "Polygon", "Circle", "Brush", "Watershed", "Graph Cut" }; // ,"Arc" };
 	static int current_draw_shape = 0;
 	ImVec2 position_correction;
@@ -236,7 +235,7 @@ int main(int, char**) {
 	// check wheter 
 	if(checkIfFirstRun("imgui.ini")) {
 		display_help_window = true;
-}
+	}
 
 	while(!done) {
 		// Poll and handle messages (inputs, window resize, etc.)
@@ -294,7 +293,7 @@ int main(int, char**) {
 					// reset warning message
 					WarningMessage = "None";
 				}
-				ImGui::SetItemDefaultFocus(); 
+				ImGui::SetItemDefaultFocus();
 				ImGui::EndPopup();
 			}
 		}
@@ -328,7 +327,7 @@ int main(int, char**) {
 				textureSize = ImVec2(zoom.current * image_width, zoom.current * image_height);
 			}
 			// better use Image than ImageButton 
-			ImGui::Image(textureId, textureSize); 
+			ImGui::Image(textureId, textureSize);
 
 			bool isHovered = ImGui::IsItemHovered();
 			bool isFocused = ImGui::IsItemFocused();
@@ -355,10 +354,10 @@ int main(int, char**) {
 				double last_zoom = zoom.current;
 				if(mW < 0.0f && (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || (ImGui::IsKeyDown(ImGuiKey_RightCtrl)))) { // IsKeyPressed did not work as intended here --> probably is regarded as true only after a certain time (maybe 0.5-1s)
 					zoom.decrease();
-					scalePoints(current_draw_shape, double(zoom.current / last_zoom), poly, marker, circ, brush_point_details);
+					scalePoints(current_draw_shape, double(zoom.current / last_zoom), draw_rect, poly, marker, circ, brush_point_details);
 				} else if(mW > 0.0f && (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || (ImGui::IsKeyDown(ImGuiKey_RightCtrl)))) {
 					zoom.increase();
-					scalePoints(current_draw_shape, double(zoom.current / last_zoom), poly, marker, circ, brush_point_details);
+					scalePoints(current_draw_shape, double(zoom.current / last_zoom), draw_rect, poly, marker, circ, brush_point_details);
 				}
 
 				if(ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
@@ -373,36 +372,49 @@ int main(int, char**) {
 #pragma region UserDrawingOnImage
 
 				// brush tool paints while LMB dragged
-				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left) &&
-				   (current_draw_shape == BrushD || current_draw_shape == CutsD)) {
-
-					// https://github.com/ocornut/imgui/issues/493 
-					// Take absolute mouse position to draw the circle into the GUI
-					ImVec2 current_brush_position = mousePositionRelative;
-					//ImVec2 current_brush_position = { mousePositionAbsolute.x / current_zoom, mousePositionAbsolute.y / current_zoom };
-
-					bool foreground = true; // for graphCut
-					if(io.KeyShift || io.KeyAlt) foreground = false;
-
-					PointRad Point_with_rad{ current_brush_position, brush_rad, (float)zoom.current, foreground };
-					if(brush_point_details.size() == 0) {
-						brush_point_details.push_back(Point_with_rad);
-					} else {
-						PointRad last_p_r = brush_point_details.back();
-						double distance = norm2d(ImVec2(last_p_r.pt.x, last_p_r.pt.y), current_brush_position);
-						if(distance >= 2) {
-							brush_point_details.push_back(Point_with_rad);
-							// ImVec2 screenPositionAbsolute = ImGui::GetItemRectMin();
+				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+					if(current_draw_shape == RectangleD) {
+						if(!is_drawing) {  // when starting to draw
+							draw_rect.left = mousePositionAbsolute.x;
+							draw_rect.top = mousePositionAbsolute.y; 
+						} else {  // while drawing
+							draw_rect.right = mousePositionAbsolute.x;
+							draw_rect.bottom = mousePositionAbsolute.y;
 						}
+						// start to draw when user holds down left mouse
+						is_drawing = true;
 					}
-					is_drawing_brush = true;
+
+					if(current_draw_shape == BrushD || current_draw_shape == CutsD) {
+
+						// https://github.com/ocornut/imgui/issues/493 
+						// Take absolute mouse position to draw the circle into the GUI
+						ImVec2 current_brush_position = mousePositionRelative;
+						//ImVec2 current_brush_position = { mousePositionAbsolute.x / current_zoom, mousePositionAbsolute.y / current_zoom };
+
+						bool foreground = true; // for graphCut
+						if(io.KeyShift || io.KeyAlt) foreground = false;
+
+						PointRad Point_with_rad{ current_brush_position, brush_rad, (float)zoom.current, foreground };
+						if(brush_point_details.size() == 0) {
+							brush_point_details.push_back(Point_with_rad);
+						} else {
+							PointRad last_p_r = brush_point_details.back();
+							double distance = norm2d(ImVec2(last_p_r.pt.x, last_p_r.pt.y), current_brush_position);
+							if(distance >= 2) {
+								brush_point_details.push_back(Point_with_rad);
+								// ImVec2 screenPositionAbsolute = ImGui::GetItemRectMin();
+							}
+						}
+						is_drawing_brush = true;
+					}
 				} else {  // on released
 					is_drawing_brush = false;
 					if(brush_point_details.size() > 0) LabelState::Instance().drawingFinished = true;
 				}
 
 				if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
-					//TODO: include Rectangle in MouseRelease function
+					// if alternative version of rectangle by clicking and manipulating points (like polygon) include it here 
 					bool isDrawingOnRelease = mouse_released(current_draw_shape, currentPoint, &poly, &marker, &ell,
 															 &circ, dragging_point);
 					if(isDrawingOnRelease) is_drawing = true;
@@ -414,32 +426,17 @@ int main(int, char**) {
 
 				// Dragging Shapes and Points (polygon needs to be closed)
 				// if(ImGui::IsMouseDown(ImGuiMouseButton_Left)) {  // both work here
-				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left)) { 
-					bool shouldDraw = dragging(current_draw_shape, currentPoint, poly, marker, circ, image_width*zoom.current, image_height * zoom.current, dragging_point);
+				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+					bool shouldDraw = dragging(current_draw_shape, currentPoint, poly, marker, circ, image_width * zoom.current, image_height * zoom.current, dragging_point);
 					if(shouldDraw) is_drawing = true;
 				}
 
-				// Draw Rectangle 
-				if(current_draw_shape == RectangleD &&
-				   ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-					if(!is_drawing) {  // when starting to draw
-						draw_rect.left = mousePositionAbsolute.x;
-						draw_rect.top = mousePositionAbsolute.y; 
-						//TODO: check if correction needed
-						//// do some position correction --> if click was near the border take it as the border value  
-					} else {  // while drawing
-						draw_rect.right = mousePositionAbsolute.x;
-						draw_rect.bottom = mousePositionAbsolute.y;
-					}
-					is_drawing = true;
-
-				}
 
 #pragma endregion UserDrawingOnImage
 			}  // End isHovered
 
 			DrawShapeOnGui(dragging_point, is_drawing, current_draw_shape, draw_rect, mousePositionAbsolute, screenPositionAbsolute, snap_to_border_distance, image_width, zoom,
-						   image_height, cv_rect, is_drawing_brush, brush_point_details, alpha, poly, marker, circ, ell);
+						   image_height, is_drawing_brush, brush_point_details, alpha, poly, marker, circ, ell);
 
 #pragma region KeyInputs
 
@@ -476,7 +473,7 @@ int main(int, char**) {
 			}
 
 
-			if(ImGui::IsMouseReleased(ImGuiMouseButton_Right) || (ImGui::IsKeyReleased(83) & !io.KeyCtrl) ) { // S key without control
+			if(ImGui::IsMouseReleased(ImGuiMouseButton_Right) || (ImGui::IsKeyReleased(83) & !io.KeyCtrl)) { // S key without control
 				evaluate = true;
 			} else if(ImGui::IsKeyPressed(65)) {   // A Key --> Add segmentation result to current class 
 				int confirmedSegResult = -1;
@@ -489,7 +486,7 @@ int main(int, char**) {
 					if(disp_region_after_adding && confirmedSegResult >= 0) drawClassRegion = true;
 				}
 
-				if(confirmedSegResult != 0) { 
+				if(confirmedSegResult != 0) {
 					show_message = true;
 					WarningMessage = "An error adding the segmented region to the class region. Maybe there is no image left. Could not add region\n";
 				}
@@ -535,9 +532,9 @@ int main(int, char**) {
 			static int counter_gui = 0;
 
 			static bool* p_open = new bool{ true };
-			ImGui::Begin( "Change State of Labeling", p_open,
-				ImGuiWindowFlags_HorizontalScrollbar |
-				ImGuiWindowFlags_AlwaysAutoResize);
+			ImGui::Begin("Change State of Labeling", p_open,
+						 ImGuiWindowFlags_HorizontalScrollbar |
+						 ImGuiWindowFlags_AlwaysAutoResize);
 			const char* items[] = { "RGB", "HSV" };
 			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 									   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
@@ -569,8 +566,7 @@ int main(int, char**) {
 					dragging_point = -1;
 				}
 				if(current_draw_shape != RectangleD) {  // reset rect
-					draw_rect.Reset();
-					cv_rect.Reset();
+					draw_rect.Reset(); 
 				}
 				if(current_draw_shape != CircleD) {  // reset circle
 					circ.Reset();
@@ -591,7 +587,7 @@ int main(int, char**) {
 				LabelState::Instance().drawingFinished = false;
 				last_draw_shape = current_draw_shape;
 			}
-			 
+
 			ImGui::ColorPicker3("Pick color for segmentation here", (float*)&picked_color);
 			// get HSV values
 			float out_h, out_s, out_v;
@@ -634,9 +630,9 @@ int main(int, char**) {
 				if(return_code == 0) {
 					if(counter_gui >= num_files_in_folder || counter_gui == 0) {
 						WarningMessage = "All images processed. Please load another image or choose another directory.";
-						show_message = true; 
+						show_message = true;
 					} else {
-						current_img_path = files_in_path.at(counter_gui); 
+						current_img_path = files_in_path.at(counter_gui);
 						LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
 						if(ret == false) {  // there was a problem loading the image ! - 1/24 does not occur anymore
 							WarningMessage = "An error occured loading the image into the display";
@@ -673,7 +669,7 @@ int main(int, char**) {
 				catch(std::exception& e) {
 					// maybe instead show message box with error					 
 					std::cout << e.what() << "\n";
-				} 
+				}
 
 			}
 			ImGui::SameLine(0.0f, 5);
@@ -727,7 +723,7 @@ int main(int, char**) {
 				bool isImageFile = BrowseImageFile(current_dir, selected_path);
 				if(isImageFile) {
 					current_img_path = selected_path;
-					  
+
 					counter_gui = 1; // 0 would also work here
 					num_files_in_folder = 1;
 					bool ret = LoadTextureFromFile(current_img_path.c_str(),
@@ -744,7 +740,7 @@ int main(int, char**) {
 			ImGui::Checkbox("Display Help", &display_help_window);
 			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Opens help window. Can also be opened and closed with H key.");
-			 
+
 
 			// switch to draw shape on pushing T
 			if(ImGui::IsKeyPressed(84)) { // T Key to switch shape
@@ -773,7 +769,7 @@ int main(int, char**) {
 				// key 68 = d
 				// LeftCrtl 162 LeftCrtl 527 ModCtrl 641 RCtrl=531
 			}
-			
+
 			ImGui::End();
 		}
 
@@ -796,7 +792,7 @@ int main(int, char**) {
 
 			ImGui::Text("Labeling Shapes and Tools:\n");
 			ImGui::TextWrapped("Rectangle / Polygon / Circle: Draw shapes with the left mouse click. Close polygons by connecting to the starting point. Drag points with Crtl + left mouse \nBrush Tool: Paint pixels directly onto the image for temporary class mask additions. \nThresholding: Choose lower color thresholds via the R, G, B, H, S, V inputs or the color picker in the right menu. The upper threshold can be adjusted for\n  each channel with the sliders above the color picker. Perform thresholding with a right - click (or 'S') after drawing shap to create a temporary\n  mask based on selected colors. \nWatershed: Add Points by left clicking, drag them with the left mouse and delete by clicking with a double click. Swich to class to add markers to another one.\n GrabCut (Graph Cut): Add Points or rather lines by holding the left mouse button and dragging. These Elements will be counted as foreground / the current class.\n  Hold Shift or Alt and draw to add to the background. When executing the algorithms wait until the result is displayed. Warning! This may be slow.");
- 
+
 			ImGui::NewLine();
 
 			ImGui::Text("Keyboard Shortcuts for efficiency: \n");
@@ -841,7 +837,7 @@ int main(int, char**) {
 		static bool ff_use_gray = false;
 		static bool show_keys_pressed = false;
 
-		if(expert_window) { 
+		if(expert_window) {
 			ImGui::Begin("Expert Window", &expert_window); //	ImGuiWindowFlags_HorizontalScrollbar | nImGuiWindowFlags_AlwaysAutoResize); 
 			ImGui::Text("Floodfill (Magic Wand) parameters");
 			ImGui::Combo("method ", &current_fill_mode, ff_fill_mode,
@@ -858,7 +854,7 @@ int main(int, char**) {
 			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Decide if you want to use the gray image (instead of RGB one) for applying the filling.");
 			ImGui::NewLine();
-			
+
 			static int kernel_size = 1;
 			static bool closeRegion = false;
 			ImGui::Text("Morphological smooth region");
@@ -873,7 +869,7 @@ int main(int, char**) {
 			ImGui::Text("Distance to snap clicked point to the edge");
 			ImGui::SliderInt("Distance in Pixels", &snap_to_border_distance, 0, 20);
 			if(ImGui::IsItemHovered())
-				ImGui::SetTooltip("This parameter defines at which distance from the borders the drawn points are snapped to the border.\n For example, if this value is 3 and the user clicks on the pixel (2, 100), the edge point of the rectangle will be set to (0, 100)."); 
+				ImGui::SetTooltip("This parameter defines at which distance from the borders the drawn points are snapped to the border.\n For example, if this value is 3 and the user clicks on the pixel (2, 100), the edge point of the rectangle will be set to (0, 100).");
 
 			/*	Stub for future implementation
 			ImGui::Checkbox("Not overwrite background", &not_overwrite_background);
@@ -912,7 +908,7 @@ int main(int, char**) {
 			}
 
 			mask_postfix = filter_chars(suffix_mask);
-			  
+
 
 			ImGui::Checkbox("Save Classes seperately ", &seperateMasks);
 			if(ImGui::IsItemHovered())
@@ -940,7 +936,7 @@ int main(int, char**) {
 
 
 		// Passing CV parameters
-		if(evaluate) {
+		if(evaluate) { 
 			CreateImageProcParam(current_draw_shape, draw_rect, ImPar, poly, zoom.current, marker, brush_point_details,
 								 position_correction, circ, f_point, current_fill_mode, low, up, ff_use_gray);
 		}
@@ -959,11 +955,11 @@ int main(int, char**) {
 			memory. If you want to use that method to update your texture, you
 			need to create it with the appropriate CPU access flags and dynamic
 			usage.See the D3D11_TEXTURE2D_DESC Structure for information on all
-			the flags.UpdateSubresource will probably be more efficient.  */ 
+			the flags.UpdateSubresource will probably be more efficient.  */
 
 			// Method 1: mapping from an to the device context
 			D3D11_MAPPED_SUBRESOURCE mappedTex;  // Provides access to subresource data.
-			auto D3D_feature_info = g_pd3dDevice->GetFeatureLevel();  
+			auto D3D_feature_info = g_pd3dDevice->GetFeatureLevel();
 			// is D3D_FEATURE_LEVEL_11_0 --> the pointerD3D11_MAPPED_SUBRESOURCE{void *pData) is aligned to 16 bytes.)
 
 			// get the texture pointer for the shader view
@@ -971,9 +967,9 @@ int main(int, char**) {
 			ID3D11Resource* res;
 			tex_shader_res_view->GetResource(&res);
 			res->QueryInterface<ID3D11Texture2D>(&pTextureInterface);
-			D3D11_TEXTURE2D_DESC desc;  
+			D3D11_TEXTURE2D_DESC desc;
 			pTextureInterface->GetDesc(&desc);  // desc seems to be correct
-			 
+
 			// I) First try to get and map the texture pointer, then change the texture and memcopy; 
 			// whatever second parameter (UNIT subresource)	may be, set_with_check 0
 			auto HRes = g_pd3dDeviceContext->Map(
@@ -983,16 +979,14 @@ int main(int, char**) {
 			cv::UMat updatedTexCV;
 			if(drawClassRegion) {
 				if(ImPar.drawAllClasses) {
-					updatedTexCV = ApplyCVOperation(cv_rect, (float*)&picked_color, ImPar,
-													DisplayAllClasses);
+					updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, DisplayAllClasses);
 					ImPar.drawAllClasses = false; // reset 
 				} else {
-					updatedTexCV = ApplyCVOperation(cv_rect, (float*)&picked_color, ImPar,
-													DisplayClass);
+					updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, DisplayClass);
 				}
 			} else if(current_draw_shape == CutsD) {
 				CvOperation OP = GrabCut; // only one of the two
-				updatedTexCV = ApplyCVOperation(cv_rect, (float*)&picked_color, ImPar, GrabCut);
+				updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, GrabCut);
 				use_grabcut = false;
 			} else if(use_floodfill) {
 				CvOperation OP = Floodfill;
@@ -1001,12 +995,12 @@ int main(int, char**) {
 					OP = (CvOperation)(FillMask | OP);
 				}
 				updatedTexCV =
-					ApplyCVOperation(cv_rect, (float*)&picked_color, ImPar, OP);
+					ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				use_floodfill = false;
 			} else if(reset_gui) {
 				CvOperation OP = Clear;
 				updatedTexCV =
-					ApplyCVOperation(cv_rect, (float*)&picked_color, ImPar, OP);
+					ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				reset_gui = false;
 			} else  // default apply CV
 			{
@@ -1014,8 +1008,7 @@ int main(int, char**) {
 				if(fill_inner_pixels) {
 					OP = (CvOperation)(FillMask | OP);
 				}
-				updatedTexCV =
-					ApplyCVOperation(cv_rect, (float*)&picked_color, ImPar, OP);
+				updatedTexCV =	ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				// clear brush after adding
 				if(ImPar.roi_shape == BrushD) {
 					brush_point_details.clear();
@@ -1039,14 +1032,14 @@ int main(int, char**) {
 			cv::Mat tempMat = updatedTexCV.getMat(cv::ACCESS_READ);
 			// Now the Mat can and its .data member can be accessed
 			uint8_t* src = (uint8_t*)tempMat.data;
-			 
+
 			// src and dst should be rgba data
 			int count = 0;
 			const uint32_t pixelSize = sizeof(desc.Format);
 			const uint32_t srcPitch = pixelSize * desc.Width;
 			for(int i = 0; i < desc.Height; i++) {
 				// copying should actually be done on the mapped Ressource
-				std::memcpy(dst, src, desc.Width * 4);   
+				std::memcpy(dst, src, desc.Width * 4);
 
 				dst += mappedTex.RowPitch;
 				src += desc.Width * 4;
@@ -1082,7 +1075,7 @@ int main(int, char**) {
 			pTextureInterface = NULL;
 
 #pragma endregion M1 : MAP_FROM_DEVICE_CONTEXT
-			 
+
 
 			evaluate = false;
 		}
@@ -1127,7 +1120,7 @@ int main(int, char**) {
 * https://github.com/ocornut/imgui
 * The functions have been adapted for use in PixLableCV.
 */
-	
+
 bool CreateDeviceD3D(HWND hWnd) {
 	// Setup swap chain
 	DXGI_SWAP_CHAIN_DESC sd;

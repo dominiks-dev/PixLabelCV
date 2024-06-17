@@ -145,8 +145,7 @@ bool fill_mask(UMat classPixelMask) {
 
 /// Use the ImageProcParameters (roi, thresholds etc.) to calulate the region of the current class and add them to a temporary mask
 /// [for the user to decide afterwards whether he wants to add the region to the class]
-cv::UMat ApplyCVOperation(DrawRect rect, float* color, ImageProcParameters params,
-						  CvOperation op) {
+cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation op) {
 	Timer timer;
 	cv::UMat img = LabelState::Instance().GetCurrentImg();
 	int height = img.rows;
@@ -154,7 +153,7 @@ cv::UMat ApplyCVOperation(DrawRect rect, float* color, ImageProcParameters param
 	UMat image_rgba;
 	// reset temp classPixelMask !
 	tempMask = cv::UMat::zeros(LabelState::Instance().h(), LabelState::Instance().w(), CV_8U);
-	UMat classPixelMask;
+	UMat classPixelMask; 
 
 #pragma region Threshold
 	if((op & Threshold) == Threshold) {
@@ -168,8 +167,8 @@ cv::UMat ApplyCVOperation(DrawRect rect, float* color, ImageProcParameters param
 		int thresh_b = floor(params.B * 255 + 0.5);
 
 		if(params.roi_shape == RectangleD) {
-			RectRoi = Rect(cv::Point2i(rect.left, rect.top),
-						   cv::Point2i(rect.right, rect.bottom));
+			RectRoi = Rect(cv::Point2i(params.roi_Points[0], params.roi_Points[1]), // left, top 
+						   cv::Point2i(params.roi_Points[2], params.roi_Points[3])); // right, down
 			keepRectInBounds(RectRoi, width, height);
 			if (RectRoi.width == 0) RectRoi.width = 1;
 			if (RectRoi.height == 0) RectRoi.height = 1;
@@ -448,9 +447,9 @@ cv::UMat ApplyCVOperation(DrawRect rect, float* color, ImageProcParameters param
 
 		Rect RectRoi;
 		Mat polyMask;
-		if(params.roi_shape == RectangleD) {
-			RectRoi = Rect(cv::Point2i(rect.left, rect.top),
-						   cv::Point2i(rect.right, rect.bottom));
+		if(params.roi_shape == RectangleD) { 
+			RectRoi = Rect(cv::Point2i(params.roi_Points[0], params.roi_Points[1]), // left, top 
+						   cv::Point2i(params.roi_Points[2], params.roi_Points[3])); // right, down
 		} else if(params.roi_shape == PolygonD) {
 			vector<Point> cvPts;
 			for(auto p : params.poly_Points) {
