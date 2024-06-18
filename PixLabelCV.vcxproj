@@ -109,7 +109,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;opencv_core490d.lib;opencv_imgproc490d.lib;opencv_imgcodecs490d.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>A:\OpenCV\opencv_repo\build\install\x64\vc17\lib;A:\OpenCV\Build4.5.2\lib\Debug;D:\_libraries\opencv4.9.0\lib;D:\_libraries\opencv4.6.0\lib\Debug;$(DXSDK_DIR)/Lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>A:\OpenCV\opencv_repo\build\install\x64\vc17\lib;D:\_libraries\opencv4.9.0\lib;$(DXSDK_DIR)/Lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -148,7 +148,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;opencv_core490.lib;opencv_imgproc490.lib;opencv_imgcodecs490.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\_libraries\opencv4.9.0\lib;$(DXSDK_DIR)/Lib/x64;A:\OpenCV\Build4.5.2\lib\Release;A:\OpenCV\opencv_repo\build\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\_libraries\opencv4.9.0\lib;$(DXSDK_DIR)/Lib/x64;A:\OpenCV\opencv_repo\build\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>

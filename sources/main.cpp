@@ -375,14 +375,29 @@ int main(int, char**) {
 				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
 					if(current_draw_shape == RectangleD) {
 						if(!is_drawing) {  // when starting to draw
-							draw_rect.left = mousePositionAbsolute.x;
-							draw_rect.top = mousePositionAbsolute.y; 
+							draw_rect.left = mousePositionRelative.x;
+							draw_rect.top = mousePositionRelative.y;
+
+							is_drawing = true;
+							// snap to border - left and up
+							draw_rect.left = (draw_rect.left) < snap_to_border_distance ? 0 : draw_rect.left; // this includes negative x
+							draw_rect.top = (draw_rect.top) < snap_to_border_distance ? 0 : draw_rect.top;
 						} else {  // while drawing
-							draw_rect.right = mousePositionAbsolute.x;
-							draw_rect.bottom = mousePositionAbsolute.y;
+							draw_rect.right = mousePositionRelative.x;
+							draw_rect.bottom = mousePositionRelative.y;
+
+							// snap to border - right and down
+							//int distance_border_x = image_width * zoom.current + screenPositionAbsolute.x - draw_rect.right;
+							int distance_border_x = textureSize.x - draw_rect.right;
+							// int distance_border_y = image_height * zoom.current + screenPositionAbsolute.y - draw_rect.bottom;
+							int distance_border_y = textureSize.y - draw_rect.bottom;
+							// if closer to rigth border then the snap distance set to the image with (and adjust to transform)
+							draw_rect.right = distance_border_x <= snap_to_border_distance ? textureSize.x : draw_rect.right; 
+								//image_width * zoom.current + screenPositionAbsolute.x : draw_rect.right;
+							draw_rect.bottom = distance_border_y <= snap_to_border_distance ? textureSize.y : draw_rect.bottom;
+								//image_height * zoom.current + screenPositionAbsolute.y : draw_rect.bottom;
 						}
 						// start to draw when user holds down left mouse
-						is_drawing = true;
 					}
 
 					if(current_draw_shape == BrushD || current_draw_shape == CutsD) {
@@ -942,7 +957,7 @@ int main(int, char**) {
 		}
 
 		// Execute computer vision algorithm(s) and copy the resulting image to the texture
-		if((LabelState::Instance().drawingFinished && evaluate)
+		if( (LabelState::Instance().drawingFinished && evaluate)
 		   || drawClassRegion
 		   || reset_gui) {
 
@@ -1068,8 +1083,7 @@ int main(int, char**) {
 			//	srcData += srcPitch;
 			//}
 
-			// III). call ID3D11DeviceContext::Unmap after finishing writing data to
-			// memory (ram)
+			// III). call ID3D11DeviceContext::Unmap after finishing writing data to memory (ram)
 			g_pd3dDeviceContext->Unmap(pTextureInterface, 0);
 			pTextureInterface->Release();
 			pTextureInterface = NULL;

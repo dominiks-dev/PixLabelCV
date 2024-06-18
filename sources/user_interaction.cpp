@@ -249,7 +249,7 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 }
 
 // Scale the points when zooming in and out [--> they are directly used in the gui and converted to CV later]
-void scalePoints(int current_draw_shape, double zoom_ratio, DrawRect d,  DrawPolygon& p, Marker& marker, DrawCircle& c, std::vector<PointRad>& lines) {
+void scalePoints(int current_draw_shape, double zoom_ratio, DrawRect& d,  DrawPolygon& p, Marker& marker, DrawCircle& c, std::vector<PointRad>& lines) {
 	if(current_draw_shape == RectangleD) {
 		d.top *= zoom_ratio;
 		d.left *= zoom_ratio;
@@ -285,10 +285,10 @@ void CreateImageProcParam(int current_draw_shape, DrawRect& draw_rect, ImageProc
 
 	std::vector<std::pair<int, int>> _dummy;
 	if(current_draw_shape == RectangleD) {		
-		int points[4] = { (draw_rect.left - position_correction.x) / current_zoom, 
-			(draw_rect.top - position_correction.y) / current_zoom,  
-			(draw_rect.right - position_correction.x) / current_zoom,	
-			(draw_rect.bottom - position_correction.y) / current_zoom }; 
+		int points[4] = { draw_rect.left / current_zoom, 
+			draw_rect.top / current_zoom,  
+			draw_rect.right / current_zoom,	
+			draw_rect.bottom / current_zoom }; 
 		ImPar.addROI(points, std::vector<std::pair<int, int>>(), current_draw_shape);
 	} else if(current_draw_shape == PolygonD) {
 		// conversion from ImVec2 to std::pair
@@ -332,27 +332,13 @@ void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shap
 		LabelState::Instance().drawingFinished = true;
 	} 
 
-	// drawing retangle
+	// drawing retangle	
 	else if(current_draw_shape == RectangleD) {
-
-		//if(ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-		//	if(!is_drawing) {  // when starting to draw
-		//		draw_rect.left = mousePositionAbsolute.x;
-		//		draw_rect.top = mousePositionAbsolute.y;  
-		//	} else {  // while drawing
-		//		draw_rect.right = mousePositionAbsolute.x;
-		//		draw_rect.bottom = mousePositionAbsolute.y;
-		//	}
-		//	is_drawing = true;
-		//}
-		// finsh drawing Rect (also when releasing mouse button outside of img)
-		//if(current_draw_shape == RectangleD && is_drawing){
+		//TODO: refactor this
+		// finsh drawing Rect 
 		if(current_draw_shape == RectangleD && !ImGui::IsMouseDown(ImGuiMouseButton_Left)
 				&& is_drawing == true) {
-			// finish drawing rectangle on mouse release
-			draw_rect.right = mousePositionAbsolute.x;
-			draw_rect.bottom = mousePositionAbsolute.y;
-
+		 
 			// make sure that the rectangle is aligned correctly - if not switch x and/or y
 			if(draw_rect.right < draw_rect.left) {
 				auto temp = draw_rect.left;
@@ -363,20 +349,7 @@ void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shap
 				auto temp = draw_rect.top;
 				draw_rect.top = draw_rect.bottom;
 				draw_rect.bottom = temp;
-			}
-
-			// snap to border here! - if distance is smaller than the snap distance --> consider screenPosition!
-			// Note: for upper left zoom should have no effect (because screenPositionAbsolute should go from 8 to -xxxx)
-			draw_rect.left = (draw_rect.left - screenPositionAbsolute.x) < snap_to_border_distance ? screenPositionAbsolute.x : draw_rect.left; // this includes negative x
-			draw_rect.top = (draw_rect.top - screenPositionAbsolute.y) < snap_to_border_distance ? screenPositionAbsolute.y : draw_rect.top;
-
-			int distance_border_x = image_width * zoom.current + screenPositionAbsolute.x - draw_rect.right; // rightmost coord of the image - the point clicked
-			int distance_border_y = image_height * zoom.current + screenPositionAbsolute.y - draw_rect.bottom;
-			// if closer to rigth border then the snap distance set to the image with (and adjust to transform)
-			draw_rect.right = distance_border_x <= snap_to_border_distance ?
-				image_width * zoom.current + screenPositionAbsolute.x : draw_rect.right;
-			draw_rect.bottom = distance_border_y <= snap_to_border_distance ?
-				image_height * zoom.current + screenPositionAbsolute.y : draw_rect.bottom;
+			}					
 
 			LabelState::Instance().drawingFinished = true;
 			is_drawing = false;
@@ -418,8 +391,11 @@ void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shap
 
 		// DRAW Rect
 		if(current_draw_shape == RectangleD) {
-			draw_list->AddRect(ImVec2(draw_rect.left, draw_rect.top),
-							   ImVec2(draw_rect.right, draw_rect.bottom),
+			//draw_list->AddRect(ImVec2(draw_rect.left, draw_rect.top),
+							   //ImVec2(draw_rect.right, draw_rect.bottom),
+			// 6/24 Added position correction here --> this accounts for scrolling 
+			draw_list->AddRect(ImVec2(draw_rect.left + screenPositionAbsolute.x, draw_rect.top + screenPositionAbsolute.y),
+							   ImVec2(draw_rect.right + screenPositionAbsolute.x, draw_rect.bottom +screenPositionAbsolute.y),
 							   IM_COL32(255, 255, 0, 255), ImDrawFlags_Closed,
 							   3.0F);
 		}

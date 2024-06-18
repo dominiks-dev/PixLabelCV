@@ -45,7 +45,7 @@ bool dragging(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Ma
 bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* poly, Marker* m, DrawEllipse* ell, DrawCircle* c, int dragging_point);
 
 void double_clicked(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Marker& marker, int& dragging_point);
-void scalePoints(int current_draw_shape, double zoom_ratio, DrawRect d, DrawPolygon& poly, Marker& marker, DrawCircle& c, std::vector<PointRad>& lines);
+void scalePoints(int current_draw_shape, double zoom_ratio, DrawRect& d, DrawPolygon& poly, Marker& marker, DrawCircle& c, std::vector<PointRad>& lines);
 
 void CreateImageProcParam(int current_draw_shape, DrawRect& draw_rect, ImageProcParameters& ImPar, DrawPolygon& poly, double current_zoom,
 	Marker m, std::vector<PointRad>& brush_points_rad, const ImVec2& position_correction, DrawCircle c, ImVec2& f_point, int current_fill_mode, int low, int up, bool ff_use_gray);
