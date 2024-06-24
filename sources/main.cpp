@@ -277,9 +277,6 @@ int main(int, char**) {
 				ImGui::Text(WarningMessage.c_str());
 				ImGui::Separator();
 
-				//static int unused_i = 0;
-				//ImGui::Combo("Combo", &unused_i, "Delete\0Delete harder\0");
-
 				static bool dont_ask_me_next_time = false;
 				if(WarningMessage == SegmentationMsg) {
 					ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));

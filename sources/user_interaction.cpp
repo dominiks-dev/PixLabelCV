@@ -154,15 +154,16 @@ void double_clicked(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& po
 	// delete points form markers
 	else if(current_draw_shape == MarkerPointsD) {
 		bool removed = marker.RemovePoint(currentPoint);
-		if(removed) dragging_point = -1;
+		if(removed) dragging_point = -1; 
 	}
 }
 
 bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* poly, Marker* m, DrawEllipse* ell,
 					DrawCircle* c, int dragging_point) {
 	bool IsDrawing = false;
-	// Not Circle
-	if(current_draw_shape == PolygonD || current_draw_shape == MarkerPointsD || current_draw_shape == ArcD) {
+
+	if(current_draw_shape == PolygonD || current_draw_shape == ArcD) {
+		
 		// check that the same point is not added twice
 		if(std::any_of(poly->points.begin(), poly->points.end(),
 		   [&] (const ImVec2& pt) {
@@ -173,16 +174,8 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 		   })) {
 			std::cout << currentPoint.x << ", " << currentPoint.y
 				<< " is present in the vector\n";
-		} else if(current_draw_shape == MarkerPointsD) {
-			if(dragging_point < 0 && m->deleted != true) {	// add new point
-				m->points.push_back(ImVec2(currentPoint.x, currentPoint.y));
-				m->labels.push_back(LabelState::Instance().GetActiveClass());
-			}
-			if(m->Count() > 0) {
-				LabelState::Instance().drawingFinished = true;
-			}
-			m->deleted = false; // reset 
-		} else { // Polygon and circle 
+		} 
+		else { // Polygon and circle 
 			double distance;
 			bool add_new_point = false;
 
@@ -226,7 +219,26 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 				IsDrawing = true;
 			}
 		}
-	}  // end poly or ellipse
+	}  // end poly or circle
+	else if(current_draw_shape == MarkerPointsD) {
+		// check that the same point or close point is not added 
+		for(int i = 0; i < m->points.size(); i++) {
+			ImVec2 pt = m->points.at(i);
+			auto distance = norm2d(pt, currentPoint);
+			if(distance <= 10) {
+				m->tooClose = true; // this is used to determine when point is deleted
+			}
+		} 
+		// if not dragging and 
+		if(dragging_point < 0 && m->tooClose != true) {	// add new point
+			m->points.push_back(ImVec2(currentPoint.x, currentPoint.y));
+			m->labels.push_back(LabelState::Instance().GetActiveClass());
+		}
+		if(m->Count() > 0) {
+			LabelState::Instance().drawingFinished = true;
+		}
+		m->tooClose = false; // reset 
+	}
 	else if(current_draw_shape == CircleD) {
 		// define points for circle
 		// check that the same point is not added twice

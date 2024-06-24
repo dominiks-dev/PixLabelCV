@@ -90,7 +90,7 @@ struct Marker {
 	//std::vector<std::tuple<int, int, int>> point_Label; // points with label 
 	std::vector<ImVec2> points;
 	std::vector<int> labels; // classnumber of the marker 
-	bool deleted;
+	bool tooClose; // for determining when not to add a new point - important for deleting on double click!
 
 	size_t Count() {
 		return points.size();
@@ -122,9 +122,9 @@ struct Marker {
 		if(!points.empty()) {
 			points.erase(points.begin() + closestIndex);
 			labels.erase(labels.begin() + closestIndex);
-			deleted = true;
+			tooClose = true;
 		}
-		return deleted;
+		return tooClose;
 	}
 };
 
