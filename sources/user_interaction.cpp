@@ -442,8 +442,7 @@ void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shap
 					poly.points.at(i).y + screenPositionAbsolute.y),
 					4, IM_COL32(0, 255, 0, 255), 24);
 			}
-		} else if(current_draw_shape == MarkerPointsD) {
-			// draw the Polygon points
+		} else if(current_draw_shape == MarkerPointsD) { 
 			//for each (auto m in markers) { // MSVC 
 			//for (auto m : markers) { // clang
 			for(size_t i = 0; i < marker.Count(); ++i) {
@@ -451,7 +450,11 @@ void DrawShapeOnGui(int& dragging_point, bool& is_drawing, int current_draw_shap
 				draw_list->AddCircleFilled(
 					ImVec2(marker.points[i].x + screenPositionAbsolute.x,
 					marker.points[i].y + screenPositionAbsolute.y),
-					4, IM_COL32(classColor.at(0), classColor.at(1), classColor.at(2), 200), 24);
+					5, IM_COL32(classColor.at(0), classColor.at(1), classColor.at(2), 200), 24);
+				draw_list->AddCircle( // highlight the borders, especially usefull for background points in dark areas
+					ImVec2(marker.points[i].x + screenPositionAbsolute.x,
+					marker.points[i].y + screenPositionAbsolute.y),
+					6, IM_COL32(255, 0, 0, 255), 25), 0.05; // 
 			}
 		}
 		// DRAW circle
