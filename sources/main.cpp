@@ -223,6 +223,7 @@ int main(int, char**) {
 	static int snap_to_border_distance = 8;
 	static bool seperateMasks = false;
 	static bool disp_region_after_adding = false;
+	static bool standard_brush_sizes = true;
 
 	// Main loop
 	bool done = false;
@@ -389,10 +390,10 @@ int main(int, char**) {
 							// int distance_border_y = image_height * zoom.current + screenPositionAbsolute.y - draw_rect.bottom;
 							int distance_border_y = textureSize.y - draw_rect.bottom;
 							// if closer to rigth border then the snap distance set to the image with (and adjust to transform)
-							draw_rect.right = distance_border_x <= snap_to_border_distance ? textureSize.x : draw_rect.right; 
-								//image_width * zoom.current + screenPositionAbsolute.x : draw_rect.right;
+							draw_rect.right = distance_border_x <= snap_to_border_distance ? textureSize.x : draw_rect.right;
+							//image_width * zoom.current + screenPositionAbsolute.x : draw_rect.right;
 							draw_rect.bottom = distance_border_y <= snap_to_border_distance ? textureSize.y : draw_rect.bottom;
-								//image_height * zoom.current + screenPositionAbsolute.y : draw_rect.bottom;
+							//image_height * zoom.current + screenPositionAbsolute.y : draw_rect.bottom;
 						}
 						// start to draw when user holds down left mouse
 					}
@@ -578,14 +579,14 @@ int main(int, char**) {
 					dragging_point = -1;
 				}
 				if(current_draw_shape != RectangleD) {  // reset rect
-					draw_rect.Reset(); 
+					draw_rect.Reset();
 				}
 				if(current_draw_shape != CircleD) {  // reset circle
 					circ.Reset();
 				}
 				if(current_draw_shape != BrushD) { // reset brush
 					brush_point_details.clear();
-				} else brush_rad = 10; // reset brush radius (DS: Maybe there is a better way here)
+				} else if(standard_brush_sizes) brush_rad = 10; // reset brush radius (DS: Maybe there is a better way here)
 				if(current_draw_shape != MarkerPointsD) {  // reset Points for polygon and markers					
 					dragging_point = -1;
 					marker.Reset();
@@ -595,7 +596,7 @@ int main(int, char**) {
 				}
 				if(current_draw_shape != CutsD) {
 					brush_point_details.clear();
-				} else brush_rad = 6; // reset brush radius so it is more suited for grabCut
+				} else if(standard_brush_sizes) brush_rad = 6; // reset brush radius so it is more suited for grabCut
 				LabelState::Instance().drawingFinished = false;
 				last_draw_shape = current_draw_shape;
 			}
@@ -661,7 +662,8 @@ int main(int, char**) {
 				ImGui::SetTooltip("Save the mask and load the next image.");
 			ImGui::SameLine(0.0f, 20);
 
-			if(ImGui::ArrowButton("##previous", ImGuiDir_Left) && files_in_path.size() > 0) {
+			if(ImGui::ArrowButton("##previous", ImGuiDir_Left) && files_in_path.size() > 0
+			   || (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))) {
 				int newIndex = counter_gui - 1;
 				int index = counter_gui > 0 ? counter_gui - 1 : 0;
 				std::string filename;
@@ -677,6 +679,9 @@ int main(int, char**) {
 				try {
 					current_img_path = filename;
 					LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
+					// draw class regions to display loaded mask
+					drawClassRegion = true;
+					ImPar.drawAllClasses = true;
 				}
 				catch(std::exception& e) {
 					// maybe instead show message box with error					 
@@ -685,7 +690,8 @@ int main(int, char**) {
 
 			}
 			ImGui::SameLine(0.0f, 5);
-			if(ImGui::ArrowButton("##next", ImGuiDir_Right) && files_in_path.size() > 0) {
+			if(ImGui::ArrowButton("##next", ImGuiDir_Right) && files_in_path.size() > 0
+			   || (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))) {
 				if(counter_gui + 1 > num_files_in_folder) {
 					// if number higher than last img - start again
 					counter_gui = 1;
@@ -697,6 +703,9 @@ int main(int, char**) {
 					// get filename
 					current_img_path = files_in_path.at(counter_gui - 1); // counter already incremented
 					LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
+					// draw class regions to display loaded mask
+					drawClassRegion = true;
+					ImPar.drawAllClasses = true;
 				}
 				catch(std::exception& e) {
 					// maybe instead show message box with error					 
@@ -705,6 +714,29 @@ int main(int, char**) {
 			}
 			ImGui::SameLine();
 			ImGui::Text("counter = %d/%d", counter_gui, num_files_in_folder);
+
+			//ImGui::SameLine();
+			ImGui::Text("Switch to image number: ");
+			static int im_num;
+			// Text box to load a specific number e.g. to continue labeling after n images
+			if(ImGui::InputInt(" ", &im_num, 1, 10, ImGuiInputTextFlags_EnterReturnsTrue)
+			   && num_files_in_folder > 0) { // only evaluate if a folder with files was loaded
+				if(im_num < 1) im_num = 1;
+				if(im_num  > num_files_in_folder) im_num = num_files_in_folder ;
+				// load the n-th file
+				counter_gui = im_num;
+				try {
+					current_img_path = files_in_path.at(im_num-1); // counter already incremented
+					LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
+					// draw class regions to display loaded mask
+					drawClassRegion = true;
+					ImPar.drawAllClasses = true;
+				}
+				catch(std::exception& e) {
+					// maybe instead show message box with error					 
+					std::cout << e.what() << "\n";
+				}
+			}
 
 			if(ImGui::Button("Select Folder")) {  // Buttons return true when clicked 
 				std::string current_dir = fs::current_path().string();
@@ -816,7 +848,7 @@ int main(int, char**) {
 			ImGui::Text("G : Color picker.\n");
 			ImGui::Text("E, M: magic wand (flood fill).\n");
 			ImGui::Text("Q : Display all class regions.\n");
-			ImGui::Text("W : Watershed.\n");
+			//ImGui::Text("W : Watershed.\n");
 			ImGui::Text("R : Reset drawn elements\n");
 			ImGui::Text("H : Help window toggle.\n");
 			ImGui::Text("T : Tool switching.\n");
@@ -869,6 +901,7 @@ int main(int, char**) {
 
 			static int kernel_size = 1;
 			static bool closeRegion = false;
+
 			ImGui::Text("Morphological smooth region");
 			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("This parameter applys a morphological closing to the mask region. Is currently for rectangle only and EXPERIMENTAL!");
@@ -887,6 +920,10 @@ int main(int, char**) {
 			ImGui::Checkbox("Not overwrite background", &not_overwrite_background);
 				if (ImGui::IsItemHovered())
 					ImGui::SetTooltip("If set, explicitly set background pixels are not overwritten by other classes (just like any other class.");*/
+			ImGui::NewLine();
+			ImGui::Checkbox("Use standard brush sizes", &standard_brush_sizes);
+			if(ImGui::IsItemHovered())
+				ImGui::SetTooltip("As default the size of the brush points is reset to 6 when grab cut is chosen and to 10 for pixel brush.");
 
 			ImGui::NewLine();
 			ImGui::Text("Zoom factor (per mouse wheel step)");
@@ -948,13 +985,13 @@ int main(int, char**) {
 
 
 		// Passing CV parameters
-		if(evaluate) { 
+		if(evaluate) {
 			CreateImageProcParam(current_draw_shape, draw_rect, ImPar, poly, zoom.current, marker, brush_point_details,
 								 position_correction, circ, f_point, current_fill_mode, low, up, ff_use_gray);
 		}
 
 		// Execute computer vision algorithm(s) and copy the resulting image to the texture
-		if( (LabelState::Instance().drawingFinished && evaluate)
+		if((LabelState::Instance().drawingFinished && evaluate)
 		   || drawClassRegion
 		   || reset_gui) {
 
@@ -1020,7 +1057,7 @@ int main(int, char**) {
 				if(fill_inner_pixels) {
 					OP = (CvOperation)(FillMask | OP);
 				}
-				updatedTexCV =	ApplyCVOperation(ImPar, (float*)&picked_color, OP);
+				updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				// clear brush after adding
 				if(ImPar.roi_shape == BrushD) {
 					brush_point_details.clear();
