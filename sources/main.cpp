@@ -459,6 +459,11 @@ int main(int, char**) {
 				fs::path cwd = fs::current_path();
 				save_key = true;
 			}
+			// saving the results on CTRL + D Key
+			if(io.KeyCtrl && ImGui::IsKeyPressed(68)) {   
+				int return_code = SaveLabels(files_in_path, seperateMasks, current_img_path, tex_shader_res_view, image_width, image_height, mask_postfix);
+				//save_key = false;
+			}
 
 			if(ImGui::IsKeyPressed(71)) {  // G Key pressed --> pick color !
 				// take the pixel value form the mouse position if it is over the screen
@@ -639,7 +644,7 @@ int main(int, char**) {
 			if(ImGui::Button("Save Result") || save_key) {
 				int return_code = SaveLabels(files_in_path, seperateMasks, current_img_path, tex_shader_res_view, image_width, image_height, mask_postfix);
 
-				// load the next image (if not all files have been processed
+				// load the next image 
 				if(return_code == 0) {
 					if(counter_gui >= num_files_in_folder || counter_gui == 0) {
 						WarningMessage = "All images processed. Please load another image or choose another directory.";
@@ -853,6 +858,8 @@ int main(int, char**) {
 			ImGui::Text("H : Help window toggle.\n");
 			ImGui::Text("T : Tool switching.\n");
 			ImGui::Text("Ctrl + Z : Undo. (undo again to 'redo')\n");
+			ImGui::Text("Ctrl + S : Save and load next image)\n");
+			ImGui::Text("Ctrl + D : Save the current mask\n");
 			ImGui::NewLine();
 			ImGui::Text("Mouse Functions for interaction:");
 			ImGui::Text("Draw and define shapes with left clicks. Right click to execute the selected algorithm.\n");
