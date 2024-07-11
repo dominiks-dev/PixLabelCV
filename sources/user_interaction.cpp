@@ -97,44 +97,17 @@ bool dragging(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Ma
 	return is_drawing;
 }
 
+
 void double_clicked(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& poly, Marker& marker, int& dragging_point) {
 
 	if(current_draw_shape == PolygonD && poly.closed) {
 		// Add point to polygon
-		if(ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+		if(ImGui::IsKeyDown(ImGuiKey_ModCtrl)) {
 			double distance, min_distance = DBL_MAX, second_min_distance = DBL_MAX;
-			int closest = -1, second_closest = -1
-				;
-			for(int i = 0; i < poly.points.size(); i++) {
-				ImVec2 pt = poly.points.at(i);
-				distance = norm2d(pt, currentPoint);
-				/*range = sqrt(pow(pt.x - currentPoint.x, 2) +
-				pow(pt.y - currentPoint.y, 2));*/
-				if(distance < min_distance) {
-					second_min_distance = min_distance;
-					second_closest = closest;
-
-					closest = i;
-					min_distance = distance;
-				} else if(distance < second_min_distance) {
-					// Update second closest if this point is closer than the current second closest
-					second_min_distance = distance;
-					second_closest = i;
-				}
-			}
-			// check that the point is not already in the vector by min range
-			if(min_distance > 2) {
-				// add the new point between the two closest   - DS: 16.1.: this is still not optimal --> check the line between points and include this into the next (comparison) metric
-				if(closest < second_closest) {
-					// If the closest point comes before the second closest in the array
-					//insertPosition = closest + 1;
-					poly.points.insert(poly.points.begin() + second_closest, currentPoint);
-				} else {
-					// If the second closest point comes before or is the same as the closest
-					//insertPosition = closest;
-					poly.points.insert(poly.points.begin() + closest, currentPoint);
-				}
-			}
+	 
+			poly.InsertPoint(currentPoint); 
+	/*		int best_index = find_closest_segment(poly, currentPoint);
+			poly.points.insert(poly.points.begin() + best_index, currentPoint);*/
 		}
 		// delete point from polygon
 		else if(poly.closed) {
@@ -144,12 +117,16 @@ void double_clicked(int current_draw_shape, ImVec2 currentPoint, DrawPolygon& po
 				double d = norm2d(pt, currentPoint);
 				if(d <= 12) {
 					it = poly.points.erase(it); // erase returns the iterator to the next element
+					// resetting the closed state seems logic
+					if(poly.points.size() < 3) poly.closed = false; 
 					break; // leaves the loop after deleting one element -> rest will be unchanged
 				} else {
 					++it; // only increment the iterator if you didn't erase
 				}
 			}
 		}
+		// recalculate mid point
+		if(poly.closed) poly.mid = calculateCentroid(poly.points);
 	}
 	// delete points form markers
 	else if(current_draw_shape == MarkerPointsD) {
@@ -175,7 +152,7 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 			std::cout << currentPoint.x << ", " << currentPoint.y
 				<< " is present in the vector\n";
 		} 
-		else { // Polygon and circle 
+		else { 
 			double distance;
 			bool add_new_point = false;
 
@@ -190,12 +167,12 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 						<< distance << "\n";
 
 					// close polygon if user clicks on first point
-					if(i == 0 && poly->closed == false) {
+					if(i == 0 && poly->closed == false
+					   && poly->points.size() > 2 ) { // must at least have 3 points
 						poly->closed = true;
 						LabelState::Instance().drawingFinished = true;
 						// calculate Polygon mid point
 						poly->mid = calculateCentroid(poly->points);
-
 						break;
 					}
 				} else if(poly->closed == false) {  // add the new point
@@ -205,7 +182,6 @@ bool mouse_released(int current_draw_shape, ImVec2 currentPoint, DrawPolygon* po
 			}
 			if(add_new_point || poly->points.size() == 0) {
 				poly->points.push_back(currentPoint);
-				// std::cout << "added Point " << currentPoint.x << ", " << currentPoint.y << " to vector\n";
 				// recalculate midpoint if further point is added 
 				if(poly->closed) poly->mid = calculateCentroid(poly->points);
 

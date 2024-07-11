@@ -34,6 +34,20 @@ inline bool inRange(ImVec2 P1, ImVec2 P2, double range) {
 	if(d <= range) return true;
 	else return false;
 }
+inline double point_to_segment_distance(const ImVec2& p, const ImVec2& v, const ImVec2& w) {
+	// Return minimum distance between point p and line segment vw
+	const double l2 = pow((v.x - w.x), 2) + pow((v.y - w.y), 2);  // Length squared of segment vw
+	if(l2 == 0.0) return 0.0;  // v == w case
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find projection of point p onto the line.
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	const double t = ((p.x - v.x) * (w.x - v.x) + (p.y - v.y) * (w.y - v.y)) / l2;
+	if(t < 0.0) return norm2d(p, v);       // Beyond the 'v' end of the segment
+	else if(t > 1.0) return norm2d(p, w);  // Beyond the 'w' end of the segment
+	const ImVec2 projection = { (float)(v.x + t * (w.x - v.x)), (float)(v.y + t * (w.y - v.y)) };
+	return norm2d(p, projection);
+}
+
 
 inline ImVec2 calculateCentroid(const std::vector<ImVec2> poly_points) {
 	float sumX = 0;

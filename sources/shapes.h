@@ -35,7 +35,25 @@ struct DrawPolygon {
 		closed = false;  
 		mid = { -1, -1 }; 
 	}
-	inline bool isOutOfBounds(ImVec2 difference, ImVec2 size) {
+	int find_closest_segment(const ImVec2& new_point) {
+		double min_distance = std::numeric_limits<double>::max();
+		int best_index = -1;
+
+		for(size_t i = 0; i < points.size(); ++i) {
+			int next_index = (i + 1) % points.size();
+			double dist = point_to_segment_distance(new_point, points[i], points[next_index]);
+			if(dist < min_distance) {
+				min_distance = dist;
+				best_index = next_index;
+			}
+		}
+		return best_index;
+	}
+	void InsertPoint(ImVec2 currentPoint) {
+		int best_index = find_closest_segment(currentPoint);
+		points.insert(points.begin() + best_index, currentPoint);
+	}
+	inline bool IsOutOfBounds(ImVec2 difference, ImVec2 size) {
 		float minX, maxX, minY, maxY;
 		std::vector<ImVec2> newPoints;
 		for (auto p : points) {
@@ -52,7 +70,7 @@ struct DrawPolygon {
 		auto diffY = currentPoint.y - mid.y;
 
 		// check first if any point would be out of boundaries
-		if (!isOutOfBounds(ImVec2(diffX, diffY), imgSize)) {
+		if (!IsOutOfBounds(ImVec2(diffX, diffY), imgSize)) {
 			for (int i = 0; i < points.size(); i++) {
 				points.at(i).x += diffX;
 				points.at(i).y += diffY;

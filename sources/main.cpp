@@ -443,6 +443,10 @@ int main(int, char**) {
 					bool shouldDraw = dragging(current_draw_shape, currentPoint, poly, marker, circ, image_width * zoom.current, image_height * zoom.current, dragging_point);
 					if(shouldDraw) is_drawing = true;
 				}
+				// recalculate the polygon mid when dragging ends
+				else if(current_draw_shape == PolygonD && poly.closed) {
+					poly.mid = calculateCentroid(poly.points);
+				}
 
 
 #pragma endregion UserDrawingOnImage
@@ -553,7 +557,7 @@ int main(int, char**) {
 			ImGui::Begin("Change State of Labeling", p_open,
 						 ImGuiWindowFlags_HorizontalScrollbar |
 						 ImGuiWindowFlags_AlwaysAutoResize);
-			const char* items[] = { "RGB", "HSV" };
+			const char* items[] = { "RGB", "HSV" }; 
 			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 									   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
 			static int colorspace = 0;
