@@ -184,7 +184,7 @@ bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_sr
     return true;
 }
  
-void LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceView*& tex_shader_res_view, ID3D11Device* g_pd3dDevice, 
+int LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceView*& tex_shader_res_view, ID3D11Device* g_pd3dDevice, 
 					  int& image_width, int& image_height, bool seperate_masks, const std::string& mask_postfix) {
 
 	/*	DS: depending on where the image and texture are loaded this may be neccessary (when CV image and texture img are loaded separately
@@ -193,9 +193,10 @@ void LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceV
 			tex_shader_res_view = nullptr;
 		}*/
 
-		// load the image
-	bool ret = LoadTextureFromFile(current_img_path.c_str(), &tex_shader_res_view, &image_width,
+	// load the image
+	bool loaded_img = LoadTextureFromFile(current_img_path.c_str(), &tex_shader_res_view, &image_width,
 								   &image_height, g_pd3dDevice);
+	if (!loaded_img) return -1; 
 
 	// check if there is a mask in the folder 
 	std::string filename = fs::path(current_img_path).filename().string(); // name of the image, but with ending
@@ -209,7 +210,14 @@ void LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceV
 		LabelState::Instance().tryLoadSeperateMasks(maskDir.string(), baseFilename + mask_postfix);
 	} else {
 		fs::path maskPath = maskDir / (baseFilename + mask_postfix + ".png");
-		LabelState::Instance().tryloadmask(maskPath.string());
+		int ret = LabelState::Instance().tryloadmask(maskPath.string());
+		if (ret == 0) return 0; // successfully loaded mask
+		// if mask with postfix does not exis try without 
+		if (ret == -1) {
+			maskPath = maskDir / (baseFilename + ".png");
+			ret = LabelState::Instance().tryloadmask(maskPath.string());
+			if (ret == 0) return 1; // could load image now 	
+		}
 	}
 }
 

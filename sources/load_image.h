@@ -51,5 +51,5 @@ std::string BrowseFolder(std::string saved_path);
 
 int SaveLabels(const std::vector<std::string>& files_in_path, bool save_classes_separately, const std::string& current_img_path,
 			   ID3D11ShaderResourceView*& tex_shader_res_view, int image_width, int image_height, const std::string& mask_postfix);
-void LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceView*& tex_shader_res_view, ID3D11Device* g_pd3dDevice,
+int LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceView*& tex_shader_res_view, ID3D11Device* g_pd3dDevice,
 					  int& image_width, int& image_height, bool seperate_masks, const std::string& mask_postfix);
