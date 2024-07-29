@@ -33,18 +33,18 @@ using namespace cv;
 namespace fs = std::filesystem;
 
 int LabelState::tryloadmask(std::string mask_path) {
-	
-	if (!fs::exists(mask_path)) {
-		return -1; 
+
+	if(!fs::exists(mask_path)) {
+		return -1;
 	}
 
 	UMat mask = imread(mask_path, IMREAD_GRAYSCALE).getUMat(cv::ACCESS_READ);
 
-	if (mask.empty())
+	if(mask.empty())
 		return -2;
 
 	// check that img has only one channel - else take the first channel
-	if (mask.channels() > 1)
+	if(mask.channels() > 1)
 		extractChannel(mask, mask, 0);
 
 	double max, min;
@@ -58,7 +58,7 @@ int LabelState::tryloadmask(std::string mask_path) {
 	ClearState();
 
 	std::vector<UMat> labelM;
-	for (int i = max_class; i >= 0; i--) { // from high to low just for fun
+	for(int i = max_class; i >= 0; i--) { // from high to low just for fun
 		cv::UMat classI;
 		//threshold(mask, classI, i, 255, CV_8U); // = mask;
 		inRange(mask, i, i, classI);
@@ -78,19 +78,19 @@ int LabelState::tryLoadSeperateMasks(std::string mask_folder, std::string mask_n
 	const int max_classes = 30;
 	std::vector<UMat> temp_Mask;
 
-	for (int i = 0; i < max_classes; ++i) {
+	for(int i = 0; i < max_classes; ++i) {
 		std::string subfolderName = mask_folder + "/" + std::to_string(i);
 		// search in subfolder for each class
-		if (fs::exists(subfolderName) && fs::is_directory(subfolderName)) {
+		if(fs::exists(subfolderName) && fs::is_directory(subfolderName)) {
 			std::string maskFileName = mask_name_postfix;
 
-			for (const auto& entry : fs::directory_iterator(subfolderName)) {
-				if (entry.is_regular_file()) {
+			for(const auto& entry : fs::directory_iterator(subfolderName)) {
+				if(entry.is_regular_file()) {
 					auto filename = entry.path().filename().string();
 					// Check for the mask with the right name
-					if ( fs::exists(filename) &&
-						(filename == maskFileName + ".png" ||
-						filename == maskFileName + std::to_string(i) + ".png") ) {
+					if(fs::exists(filename) &&
+					   (filename == maskFileName + ".png" ||
+					   filename == maskFileName + std::to_string(i) + ".png")) {
 
 						Mat classMask = cv::imread(entry.path().string(), IMREAD_GRAYSCALE);
 						// load it into the temporary label first
@@ -102,9 +102,9 @@ int LabelState::tryLoadSeperateMasks(std::string mask_folder, std::string mask_n
 		}
 	}
 
-	if (temp_Mask.size() == 0)
+	if(temp_Mask.size() == 0)
 		// if no mask could be loaded create a dummy one
-		for (int i = 0; i < 3; i++)
+		for(int i = 0; i < 3; i++)
 			temp_Mask.push_back(cv::UMat::zeros(height, width, CV_8U));
 
 	pushState(temp_Mask);
@@ -121,23 +121,23 @@ cv::Mat LabelState::load_new_image(std::string img_path, const std::string mask_
 	currentImg = Copy.clone().getUMat(cv::ACCESS_FAST);
 	//Mat DBG_Img = currentImg.getMat(cv::ACCESS_READ);
 
-	if (!currentImg.empty()) {
+	if(!currentImg.empty()) {
 		width = currentImg.size[1];
 		height = currentImg.size[0];
 		activeClass = 1;
 		//initialize vector
 		int could_load_mask = -47;
-		if (load_mask)
+		if(load_mask)
 			could_load_mask = tryloadmask(mask_path); // does clear state when masks exist
 
 		// init mask if it does not exist or could not be loaded
-		if (could_load_mask != 0) {
+		if(could_load_mask != 0) {
 			// DS: 26.1.24 seems to be needed when loading new image(s) with loadTextureFromFile() fct.  
 			// DS: 7.2.24 switched to clear Masks
 			// labeledMasks().clear(); 
 			ClearState();
 			std::vector<UMat> temp_Mask;
-			for (int i = 0; i < 3; i++) //start with 3 as default
+			for(int i = 0; i < 3; i++) //start with 3 as default
 				//labeledMasks().push_back(cv::UMat::zeros(height, width, CV_8U));
 				temp_Mask.push_back(cv::UMat::zeros(height, width, CV_8U));
 			pushState(temp_Mask);
@@ -151,18 +151,18 @@ cv::Mat LabelState::load_new_image(std::string img_path, const std::string mask_
 // it has to be checked before that the directory to save in does exist!
 int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages) {
 
-	if (labeledMasks().size() == 0) return -2;
+	if(labeledMasks().size() == 0) return -2;
 
 	// 11.2.24 DS: save seperate mask files 
-	if (seperateImages == true) {
+	if(seperateImages == true) {
 		try {
 			UMat backgroundMask = UMat::ones(height, width, CV_8U); // TODO: check if Mat would be faster than UMat
 
-			for (int i = 1; i <= labeledMasks().size() - 1; i++) {
+			for(int i = 1; i <= labeledMasks().size() - 1; i++) {
 				cv::UMat classI = labeledMasks()[i];
 
 				// Check if the mask contains any value greater than 0
-				if (cv::countNonZero(labeledMasks()[i]) > 0) {
+				if(cv::countNonZero(labeledMasks()[i]) > 0) {
 					fs::path maskClassFolder = fs::path(singleMaskPath).parent_path() / std::to_string(i);
 					fs::create_directories(maskClassFolder);
 
@@ -173,7 +173,7 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 
 					// Construct the filename
 					fs::path filePath = fs::path(maskClassFolder) / (fs::path(singleMaskPath).stem().string() +
-						std::to_string(i) + ".png");
+																	 std::to_string(i) + ".png");
 
 					// Save the binary mask
 					cv::imwrite(filePath.string(), binaryMask);
@@ -190,7 +190,7 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 			fs::create_directories(backgroundFolder);
 			cv::imwrite((backgroundFolder / fs::path(singleMaskPath).stem()).string() + ".png", backgroundMask);
 		}
-		catch (std::exception& e) {
+		catch(std::exception& e) {
 			std::cout << e.what() << "\n";
 			return -1;
 		}
@@ -199,7 +199,7 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 	// DS 2.8.23 switch so higher classes have highter priority! - Due to BUG: Adding to class 1 also inner region which was already labeled as class 2
 	else {
 		cv::UMat labelImg = cv::UMat::zeros(height, width, CV_8U);
-		for (int i = 1; i <= labeledMasks().size() - 1; i++) {
+		for(int i = 1; i <= labeledMasks().size() - 1; i++) {
 			cv::UMat classI = labeledMasks()[i];
 
 			// Alt: get min and max vals of UMat
@@ -207,7 +207,7 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 			//Point minLoc, maxLoc; 
 			//minMaxLoc(classI, &minVal, &maxVal, &minLoc, &maxLoc);		
 			//if (!classI.empty() && maxVal!=0.0) {
-			if (countNonZero(classI) != 0) {
+			if(countNonZero(classI) != 0) {
 				UMat src = UMat::ones(height, width, CV_8U);
 				cv::multiply(src, Scalar(i), src); // *= i does not work for UMat
 				//bitwise_and( src, classI, labelImg);
@@ -219,7 +219,7 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 		try {
 			std::string imgname = singleMaskPath;
 
-			if (singleMaskPath.substr(singleMaskPath.find_last_of('.'), singleMaskPath.size()) != ".png") {
+			if(singleMaskPath.substr(singleMaskPath.find_last_of('.'), singleMaskPath.size()) != ".png") {
 				imgname = singleMaskPath + ".png";
 			}
 			//imgname = "out.png";
@@ -227,7 +227,7 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 			auto a = result;
 
 		}
-		catch (std::exception& e) {
+		catch(std::exception& e) {
 			//show message box with error
 			return -1;
 			//std::cout << e.what() << "\n";
@@ -239,12 +239,12 @@ int LabelState::saveLabels(const std::string singleMaskPath, bool seperateImages
 
 
 bool LabelState::ChangeActiveClass(int class_number) {
-	if (class_number < 0 || class_number > 19) return false;
+	if(class_number < 0 || class_number > 19) return false;
 	activeClass = class_number;
 	// add mask regions to the result, if there are not enough yet
-	if (labeledMasks().size() < class_number + 1) {
+	if(labeledMasks().size() < class_number + 1) {
 		// class 0 is background so we need one more
-		while (labeledMasks().size() < class_number + 1) {
+		while(labeledMasks().size() < class_number + 1) {
 			labeledMasks().push_back(cv::UMat::zeros(height, width, CV_8U));
 		}
 	}
@@ -255,32 +255,32 @@ bool LabelState::ChangeActiveClass(int class_number) {
 int LabelState::addRegionToClass(cv::UMat newRegion, bool overwrite_existing, bool multiplePixelLabelsAllowed) {
 
 	// check that mask exists
-	if (GetCurrentState().empty()) {
+	if(GetCurrentState().empty()) {
 		return -2;
 	}
-	if (newRegion.empty()) return -3;
+	if(newRegion.empty()) return -3;
 	// start timer
-	Timer timer3 = Timer();
+	Timer timer1 = Timer();
 
 	// get a copy of the current labelMask
 	auto newState = CopyCurrentState();
 
 	// check which masks exist and are not empty
-	for (int i = 0; i < newState.size(); i++) {
-		if (i == activeClass) continue; // skip current class for performance 
+	for(int i = 0; i < newState.size(); i++) {
+		if(i == activeClass) continue; // skip current class for performance 
 
 		UMat classMask = newState.at(i);
-
 		UMat intersection;
 		cv::bitwise_and(classMask, newRegion, intersection);
 		std::vector<cv::Point2i> locations;
 		// get locations of non-zero pixels in the intersection of the current class and the new 
-		cv::findNonZero(intersection, locations);
+		//cv::findNonZero(intersection, locations); // TODO: remove if possible
+		int non_zeros = cv::countNonZero(intersection);
 
 		// check if there are any points (pixels) in the i-th mask that are not zero
-		if (locations.size() > 0) {
+		if(non_zeros > 0) {
 			// Background: remove this region from all other class masks - This has to be done even when multiple lables are allowed
-			if (activeClass == 0) {
+			if(activeClass == 0) {
 				UMat region_to_keep;
 				//  cv::bitwise_and, cv::bitwise_or and cv::bitwise_xor on binary images:
 				// region to keep is classMask minus intersection 
@@ -288,29 +288,26 @@ int LabelState::addRegionToClass(cv::UMat newRegion, bool overwrite_existing, bo
 				newState.at(i) = region_to_keep; // |= would be wrong here
 				//UMat b = classMask.mul(intersection); // just testing 
 			}
-			// remove pixels from other classes ! (if overwrite is active AND only one mask allowed)
-			// except for background (class 0)! it acts as a "reset" and can be overwritten by other classes 
-			else if (multiplePixelLabelsAllowed == false &&
-				overwrite_existing == false && i != 0) { // i == 0 is background
-				// simple and stupid solution --> set all double pixels to zero 
-				for (auto pix : locations) {
-					//newRegion.at<uchar>(pix) = 0; // only Mat
-					// Download UMat to a Mat
-					cv::Mat newRegionMat = newRegion.getMat(cv::ACCESS_RW);
-
-					// Modify the pixel value
-					newRegionMat.at<uchar>(pix) = 0;
-				}
-				//newRegion = intersection - locations; 
+			// 
+			else if(multiplePixelLabelsAllowed == false &&
+					overwrite_existing == false &&
+					i != 0) { // current class is not background
+				// Remove the pixels the already belong to other classes from the new (active) region, so they are not added when only one label per pixel is allowed
+				// result is new region - pixels already belonging to the i-th class
+				//Timer timer_for_loop = Timer();
+				cv::bitwise_xor(newRegion, intersection, newRegion);
+				std::cout << "timer for loop adding class pixels: ";
+				timer1.Stop();
+				// RemoveFrom(locations, newRegion);				
 			}
 			// Background or overwrite class: remove the pixels that do not belong to the  
-			else if (multiplePixelLabelsAllowed == false && 
-				overwrite_existing == true || i == 0) {
+			else if((multiplePixelLabelsAllowed == false &&
+					overwrite_existing == true) || i == 0) {
 				UMat region_to_keep;
 				// region to keep is classMask minus intersection
 				cv::bitwise_xor(classMask, intersection, region_to_keep);
 				//labeledMasks().at(0) = region_to_keep; // DS 18.1. remove when working
-				newState.at(0) = region_to_keep;
+				newState.at(i) = region_to_keep;
 			}
 
 		}
@@ -324,15 +321,16 @@ int LabelState::addRegionToClass(cv::UMat newRegion, bool overwrite_existing, bo
 
 	pushState(newState);
 
-	std::cout << " add region to class " << activeClass << !" took: ";
-	//timer1.Stop();
+	std::cout << " add region to class " << activeClass << " took: ";
+
 	return 0;
 }
+
 
 // Is currently only used for watershed transform 
 int LabelState::setSegmentationMasks(cv::UMat classMasks, bool overwrite_existing) { // overwrite_existing is dummy for now - might be used later
 
-	if (classMasks.empty()) return -3;
+	if(classMasks.empty()) return -3;
 	// start timer
 	Timer timer1;
 
@@ -348,12 +346,12 @@ int LabelState::setSegmentationMasks(cv::UMat classMasks, bool overwrite_existin
 	auto newState = std::vector<UMat>(maxPixelValue);
 
 	// extend the class masks vector if to short - starting from class 0 (background)
-	while (newState.size() < maxPixelValue + 1) {
+	while(newState.size() < maxPixelValue + 1) {
 		newState.push_back(cv::UMat::zeros(height, width, CV_8U));
 	}
 
 	// Iterate over each unique class index (= pixel Value)
-	for (int i = 0; i <= maxPixelValue; i++) {
+	for(int i = 0; i <= maxPixelValue; i++) {
 		// Threshold the image to obtain pixels with the target value
 		cv::UMat thresholdedImage;
 
@@ -369,15 +367,14 @@ int LabelState::setSegmentationMasks(cv::UMat classMasks, bool overwrite_existin
 	return 0;
 }
 
-
 bool LabelState::Undo() {
 
-	if (currentIndex == -1) {
+	if(currentIndex == -1) {
 		std::cerr << "No history available for undo." << std::endl;
 		return false;
 	}
 
 	currentIndex = (currentIndex - 1 + capacity) % capacity;
 	std::cout << "index = " << currentIndex << "\n";
-	return true;  
+	return true;
 }

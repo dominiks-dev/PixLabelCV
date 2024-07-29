@@ -218,6 +218,7 @@ int LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceVi
 			ret = LabelState::Instance().tryloadmask(maskPath.string());
 			if (ret == 0) return 1; // could load image now 	
 		}
+		return -2; // no mask
 	}
 }
 

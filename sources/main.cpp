@@ -709,7 +709,14 @@ int main(int, char**) {
 
 				try {
 					current_img_path = filename;
-					LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
+					int ret= LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
+					if(ret == 1) {
+						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
+						show_message = true;
+					} else if(ret == -1) {
+						WarningMessage = "An error occured loading the image.";
+						show_message = true;
+					}
 					// draw class regions to display loaded mask
 					drawClassRegion = true;
 					ImPar.drawAllClasses = true;
@@ -721,16 +728,16 @@ int main(int, char**) {
 
 			}
 			ImGui::SameLine(0.0f, 5);
-			if (ImGui::ArrowButton("##next", ImGuiDir_Right) && files_in_path.size() > 0
-				|| (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))) {
+			if (ImGui::ArrowButton("##next", ImGuiDir_Right) && files_in_path.size() > 0 || 
+				(ImGui::IsKeyPressed(ImGuiKey_RightArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+				) {
+				// if number higher than last img - start again
 				if (counter_gui + 1 > num_files_in_folder) {
-					// if number higher than last img - start again
 					counter_gui = 1;
 				}
 				else {
 					counter_gui++;
-				}
-				// TODO: refactor this
+				} 
 				// try to load the next file
 				try {
 					// get filename
@@ -740,7 +747,7 @@ int main(int, char**) {
 						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 						show_message = true;
 					}
-					else if (ret != 0) {
+					else if (ret == -1) {
 						WarningMessage = "An error occured loading the image.";
 						show_message = true;
 					}
@@ -773,7 +780,7 @@ int main(int, char**) {
 						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 						show_message = true;
 					}
-					else if (ret != 0) {
+					else if (ret == -1) {
 						WarningMessage = "An error occured loading the image.";
 						show_message = true;
 					}
@@ -808,7 +815,7 @@ int main(int, char**) {
 							WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 							show_message = true;
 						}
-						else if (ret != 0) {
+						else if (ret ==-1) {
 							WarningMessage = "An error occured loading the image.";
 							show_message = true;
 						}
