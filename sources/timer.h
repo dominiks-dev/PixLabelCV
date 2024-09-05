@@ -33,6 +33,12 @@ public:
 	~Timer(){
 		Stop();
 	}
+	double GetTimeInSeconds() {
+		auto start = std::chrono::time_point_cast<std::chrono::seconds>(m_StartTimestamp).time_since_epoch().count();
+		auto endTimestamp = std::chrono::high_resolution_clock::now();
+		auto end = std::chrono::time_point_cast<std::chrono::seconds>(endTimestamp).time_since_epoch().count();
+		return end - start; 
+	}
 
 	void Stop() {
 		auto endTimestamp = std::chrono::high_resolution_clock::now();

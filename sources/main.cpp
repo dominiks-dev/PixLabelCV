@@ -229,6 +229,9 @@ int main(int, char**) {
 	bool done = false;
 	static bool show_message = false;
 	static std::string WarningMessage = "None";
+	static bool show_timer_window = false; 
+	static Timer labelTimer = Timer(); 
+
 
 #ifdef DEBUG
 	std::cout << cv::getBuildInformation() << std::endl;
@@ -680,6 +683,7 @@ int main(int, char**) {
 							WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 							show_message = true;
 						}
+						labelTimer = Timer(); // reset the label timer
 					}
 					counter_gui++;
 				}
@@ -720,6 +724,7 @@ int main(int, char**) {
 					// draw class regions to display loaded mask
 					drawClassRegion = true;
 					ImPar.drawAllClasses = true;
+					labelTimer = Timer(); // reset the label timer
 				}
 				catch (std::exception& e) {
 					// maybe instead show message box with error					 
@@ -754,6 +759,7 @@ int main(int, char**) {
 					// draw class regions to display loaded mask
 					drawClassRegion = true;
 					ImPar.drawAllClasses = true;
+					labelTimer = Timer(); // reset the label timer
 				}
 				catch (std::exception& e) {
 					// maybe instead show message box with error					 
@@ -787,6 +793,7 @@ int main(int, char**) {
 					// draw class regions to display loaded mask
 					drawClassRegion = true;
 					ImPar.drawAllClasses = true;
+					labelTimer = Timer(); // reset the label timer
 				}
 				catch (std::exception& e) {
 					// maybe instead show message box with error					 
@@ -815,12 +822,13 @@ int main(int, char**) {
 							WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 							show_message = true;
 						}
-						else if (ret ==-1) {
+						else if (ret == -1) {
 							WarningMessage = "An error occured loading the image.";
 							show_message = true;
 						}
 						// start the counter for the (segmented) images - for gui start from 1
 						counter_gui = 1;
+						labelTimer = Timer(); // reset the label timer
 					}
 				}
 			}
@@ -837,6 +845,7 @@ int main(int, char**) {
 					bool ret = LoadTextureFromFile(current_img_path.c_str(),
 						&tex_shader_res_view, &image_width,
 						&image_height, g_pd3dDevice);
+
 				}
 			}
 			if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Select one specific image to label."); }
@@ -851,14 +860,17 @@ int main(int, char**) {
 
 
 			// switch to draw shape on pushing T
-			if (ImGui::IsKeyPressed(84)) { // T Key to switch shape
+			if ( (io.KeyCtrl && ImGui::IsKeyPressed(84)) || ImGui::IsKeyPressed(ImGuiKey_P) ) {
+				show_timer_window = !show_timer_window;
+			}
+			else if (ImGui::IsKeyPressed(84)) { // T Key to switch shape
 				int shape_num = current_draw_shape + 1;
 				int num_shapes = sizeof(drawshape) / 8; // sizeof() gives size in bytes
 				current_draw_shape = shape_num % num_shapes;
 				std::cout << current_draw_shape;
 			}
 			// if no key for CV or other control is pressed, check for class numbers
-			else if (ImGui::IsKeyDown(220) || ImGui::IsKeyDown(594)) {// ^ Key or ` Key (left to 1)
+			else if (ImGui::IsKeyDown(220) || ImGui::IsKeyDown(594)) { // ^ Key or ` Key (left to 1)
 				active_class = 0; // switch to background (easy/quick)
 			}
 			else {
@@ -878,9 +890,36 @@ int main(int, char**) {
 				// key 68 = d
 				// LeftCrtl 162 LeftCrtl 527 ModCtrl 641 RCtrl=531
 			}
-
 			ImGui::End();
 		}
+
+
+		// Timer window - optional
+		if (show_timer_window) {
+			ImGui::Begin("Time current Label", &show_timer_window, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+			double elapsed_time = labelTimer.GetTimeInSeconds();			 
+			// Convert elapsed time to minutes and seconds
+			int minutes = static_cast<int>(elapsed_time) / 60;
+			int seconds = static_cast<int>(elapsed_time) % 60;
+
+			// Display the timer in the format "MM:SS"
+			std::ostringstream oss;
+			oss << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
+
+			ImGui::SetWindowFontScale(1.7f); 
+			// Use color stack to change text color after a certain interval 
+			if (elapsed_time > 60.0 *5) {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.31f, 1.0f)); 
+				ImGui::Text("%s", oss.str().c_str());  
+				ImGui::PopStyleColor();  // Pop color to revert to the default color
+			}
+			else {
+				ImGui::Text("%s", oss.str().c_str());  // default color
+			} 
+			ImGui::End();
+		} 
+
 
 		// Help/Instructions Window
 		if (display_help_window) {
