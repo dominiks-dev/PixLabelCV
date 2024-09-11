@@ -85,10 +85,10 @@ int main(int, char**) {
 	::RegisterClassEx(&wc);
 	HWND hwnd =
 		::CreateWindow(wc.lpszClassName, _T("PixLabelCV"), WS_OVERLAPPEDWINDOW, 100,
-			100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+					   100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
 	// Initialize Direct3D
-	if (!CreateDeviceD3D(hwnd)) {
+	if(!CreateDeviceD3D(hwnd)) {
 		CleanupDeviceD3D();
 		::UnregisterClass(wc.lpszClassName, wc.hInstance);
 		return 1;
@@ -106,7 +106,7 @@ int main(int, char**) {
 	// create CV ocl context
 	// initialize OpenCL context of OpenCV lib from DirectX
 	cv::ocl::Context   m_oclCtx;
-	if (cv::ocl::haveOpenCL()) {
+	if(cv::ocl::haveOpenCL()) {
 		m_oclCtx = cv::directx::ocl::initializeContextFromD3D11Device(g_pd3dDevice);
 	}
 	cv::String m_oclDevName =
@@ -173,7 +173,7 @@ int main(int, char**) {
 	std::string img_file = "sled.png";
 	//LabelState::Instance().load_new_image(img_file); // DS: not needed anymore
 	bool ret = LoadTextureFromFile(img_file.c_str(), &tex_shader_res_view,
-		&image_width, &image_height, g_pd3dDevice);
+								   &image_width, &image_height, g_pd3dDevice);
 	IM_ASSERT(ret); //DS: is pointless now - changed to display hint text img 
 
 	static int last_draw_shape = 0;
@@ -199,6 +199,7 @@ int main(int, char**) {
 	static float alpha = 0.5;
 	static bool expert_window;
 	static bool display_help_window = false;
+	static bool show_img_name = false;
 	static bool is_drawing = false;
 	static bool reset_gui = false;
 	static bool save_key = false;
@@ -229,34 +230,34 @@ int main(int, char**) {
 	bool done = false;
 	static bool show_message = false;
 	static std::string WarningMessage = "None";
-	static bool show_timer_window = false; 
-	static Timer labelTimer = Timer(); 
+	static bool show_timer_window = false;
+	static Timer labelTimer = Timer();
 
 
 #ifdef DEBUG
 	std::cout << cv::getBuildInformation() << std::endl;
 #endif
 	// check wheter 
-	if (checkIfFirstRun("imgui.ini")) {
+	if(checkIfFirstRun("imgui.ini")) {
 		display_help_window = true;
 	}
 
-	while (!done) {
+	while(!done) {
 		// Poll and handle messages (inputs, window resize, etc.)
 		// See the WndProc() function below for our to dispatch events to the Win32
 		// backend.
 		MSG msg;
 
-		while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
+		while(::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE)) {
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
-			if (msg.message == WM_QUIT)
+			if(msg.message == WM_QUIT)
 				done = true;
-			else if (msg.message == WM_KEYUP) { // WM_RBUTTONUP
+			else if(msg.message == WM_KEYUP) { // WM_RBUTTONUP
 				auto res = msg.wParam;
 			}
 		}
-		if (done) break;
+		if(done) break;
 
 		// Start the Dear ImGui frame
 		ImGui_ImplDX11_NewFrame();
@@ -266,29 +267,29 @@ int main(int, char**) {
 		// ImGui Demo window for reference only 
 		// if(show_demo_window) ImGui::ShowDemoWindow(&show_demo_window);
 
-		if (show_message) {
+		if(show_message) {
 			ImGui::OpenPopup("Warning");
 
 			// Always center this window when appearing
 			ImVec2 center = ImGui::GetMainViewport()->GetCenter();
 			ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-			if (ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
+			if(ImGui::BeginPopupModal("Warning", NULL, ImGuiWindowFlags_AlwaysAutoResize)) {
 				std::string SegmentationMsg = "An error adding the segmented region to the class region. Probably you did not segment anything but tried to add?\n\n";
-				if (WarningMessage == "None") {
+				if(WarningMessage == "None") {
 					WarningMessage = SegmentationMsg;
 				}
 				ImGui::Text(WarningMessage.c_str());
 				ImGui::Separator();
 
 				static bool dont_ask_me_next_time = false;
-				if (WarningMessage == SegmentationMsg) {
+				if(WarningMessage == SegmentationMsg) {
 					ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 					ImGui::Checkbox("I won't do it again", &dont_ask_me_next_time);
 					ImGui::PopStyleVar();
 				}
 
-				if (ImGui::Button("OK", ImVec2(120, 0))) {
+				if(ImGui::Button("OK", ImVec2(120, 0))) {
 					ImGui::CloseCurrentPopup();
 					show_message = false;
 					// reset warning message
@@ -322,7 +323,7 @@ int main(int, char**) {
 			// ImTextureID textureId = io.Fonts->TexID;
 			// ImVec2 textureSize = ImVec2(io.Fonts->TexWidth, io.Fonts->TexHeight);
 
-			if (zoom.current >= zoom.min) {
+			if(zoom.current >= zoom.min) {
 				// if neccessary translate (by scrolling) after zoom https://github.com/ocornut/imgui/issues/1757
 				// because currently position after zoom is oriented on the upper left corner
 				textureSize = ImVec2(zoom.current * image_width, zoom.current * image_height);
@@ -338,9 +339,9 @@ int main(int, char**) {
 			//ImVec2 screenSizeAbsolute = ImGui::GetItemRectSize(); // gives Difference between RectMax() and RectMin()
 			position_correction = screenPositionAbsolute;
 			ImVec2 mousePositionRelative = ImVec2(mousePositionAbsolute.x - screenPositionAbsolute.x,
-				mousePositionAbsolute.y - screenPositionAbsolute.y);
+												  mousePositionAbsolute.y - screenPositionAbsolute.y);
 			ImGui::Text("Mouse Position: %f, %f", mousePositionRelative.x,
-				mousePositionRelative.y);
+						mousePositionRelative.y);
 			/* Further information - only used for debugging
 			ImGui::Text("Is mouse over screen? %s", isHovered ? "Yes" : "No");
 			ImGui::Text("Is screen focused? %s", isFocused  ? "Yes" : "No");
@@ -348,21 +349,20 @@ int main(int, char**) {
 			ImGui::IsMouseDown(ImGuiMouseButton_Left) ? "Yes" : "No"); */
 
 			// check if mouse is hovered over the image -> to draw
-			if (isHovered) {
+			if(isHovered) {
 				ImVec2 currentPoint = ImVec2(mousePositionRelative.x, mousePositionRelative.y);
 
 				float mW = io.MouseWheel; // positiv is up; negative is down
 				double last_zoom = zoom.current;
-				if (mW < 0.0f && (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || (ImGui::IsKeyDown(ImGuiKey_RightCtrl)))) { // IsKeyPressed did not work as intended here --> probably is regarded as true only after a certain time (maybe 0.5-1s)
+				if(mW < 0.0f && (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || (ImGui::IsKeyDown(ImGuiKey_RightCtrl)))) { // IsKeyPressed did not work as intended here --> probably is regarded as true only after a certain time (maybe 0.5-1s)
 					zoom.decrease();
 					scalePoints(current_draw_shape, double(zoom.current / last_zoom), draw_rect, poly, marker, circ, brush_point_details);
-				}
-				else if (mW > 0.0f && (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || (ImGui::IsKeyDown(ImGuiKey_RightCtrl)))) {
+				} else if(mW > 0.0f && (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || (ImGui::IsKeyDown(ImGuiKey_RightCtrl)))) {
 					zoom.increase();
 					scalePoints(current_draw_shape, double(zoom.current / last_zoom), draw_rect, poly, marker, circ, brush_point_details);
 				}
 
-				if (ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
+				if(ImGui::IsMouseDragging(ImGuiMouseButton_Middle)) {
 					auto scrollAbsX = ImGui::GetScrollX();
 					auto scrollAbsY = ImGui::GetScrollY();
 					float drag_speed = 1.5;
@@ -374,9 +374,9 @@ int main(int, char**) {
 #pragma region UserDrawingOnImage
 
 				// brush tool paints while LMB dragged
-				if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-					if (current_draw_shape == RectangleD) {
-						if (!is_drawing) {  // when starting to draw
+				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+					if(current_draw_shape == RectangleD) {
+						if(!is_drawing) {  // when starting to draw
 							draw_rect.left = mousePositionRelative.x;
 							draw_rect.top = mousePositionRelative.y;
 
@@ -384,8 +384,7 @@ int main(int, char**) {
 							// snap to border - left and up
 							draw_rect.left = (draw_rect.left) < snap_to_border_distance ? 0 : draw_rect.left; // this includes negative x
 							draw_rect.top = (draw_rect.top) < snap_to_border_distance ? 0 : draw_rect.top;
-						}
-						else {  // while drawing
+						} else {  // while drawing
 							draw_rect.right = mousePositionRelative.x;
 							draw_rect.bottom = mousePositionRelative.y;
 
@@ -403,7 +402,7 @@ int main(int, char**) {
 						// start to draw when user holds down left mouse
 					}
 
-					if (current_draw_shape == BrushD || current_draw_shape == CutsD) {
+					if(current_draw_shape == BrushD || current_draw_shape == CutsD) {
 
 						// https://github.com/ocornut/imgui/issues/493 
 						// Take absolute mouse position to draw the circle into the GUI
@@ -411,47 +410,45 @@ int main(int, char**) {
 						//ImVec2 current_brush_position = { mousePositionAbsolute.x / current_zoom, mousePositionAbsolute.y / current_zoom };
 
 						bool foreground = true; // for graphCut
-						if (io.KeyShift || io.KeyAlt) foreground = false;
+						if(io.KeyShift || io.KeyAlt) foreground = false;
 
 						PointRad Point_with_rad{ current_brush_position, brush_rad, (float)zoom.current, foreground };
-						if (brush_point_details.size() == 0) {
+						if(brush_point_details.size() == 0) {
 							brush_point_details.push_back(Point_with_rad);
-						}
-						else {
+						} else {
 							PointRad last_p_r = brush_point_details.back();
 							double distance = norm2d(ImVec2(last_p_r.pt.x, last_p_r.pt.y), current_brush_position);
-							if (distance >= 2) {
+							if(distance >= 2) {
 								brush_point_details.push_back(Point_with_rad);
 								// ImVec2 screenPositionAbsolute = ImGui::GetItemRectMin();
 							}
 						}
 						is_drawing_brush = true;
 					}
-				}
-				else {  // on released
+				} else {  // on released
 					is_drawing_brush = false;
-					if (brush_point_details.size() > 0) LabelState::Instance().drawingFinished = true;
+					if(brush_point_details.size() > 0) LabelState::Instance().drawingFinished = true;
 				}
 
-				if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+				if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 					// if alternative version of rectangle by clicking and manipulating points (like polygon) include it here 
 					bool isDrawingOnRelease = mouse_released(current_draw_shape, currentPoint, &poly, &marker, &ell,
-						&circ, dragging_point);
-					if (isDrawingOnRelease) is_drawing = true;
+															 &circ, dragging_point);
+					if(isDrawingOnRelease) is_drawing = true;
 				}
 
-				if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+				if(ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
 					double_clicked(current_draw_shape, currentPoint, poly, marker, dragging_point);
 				}
 
 				// Dragging Shapes and Points (polygon needs to be closed)
 				// if(ImGui::IsMouseDown(ImGuiMouseButton_Left)) {  // both work here
-				if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+				if(ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
 					bool shouldDraw = dragging(current_draw_shape, currentPoint, poly, marker, circ, image_width * zoom.current, image_height * zoom.current, dragging_point);
-					if (shouldDraw) is_drawing = true;
+					if(shouldDraw) is_drawing = true;
 				}
 				// recalculate the polygon mid when dragging ends
-				else if (current_draw_shape == PolygonD && poly.closed) {
+				else if(current_draw_shape == PolygonD && poly.closed) {
 					poly.mid = calculateCentroid(poly.points);
 				}
 
@@ -460,32 +457,30 @@ int main(int, char**) {
 			}  // End isHovered
 
 			DrawShapeOnGui(dragging_point, is_drawing, current_draw_shape, draw_rect, mousePositionAbsolute, screenPositionAbsolute, snap_to_border_distance, image_width, zoom,
-				image_height, is_drawing_brush, brush_point_details, alpha, poly, marker, circ, ell);
+						   image_height, is_drawing_brush, brush_point_details, alpha, poly, marker, circ, ell);
 
 #pragma region KeyInputs
 
 			// saving the results on CTRL + S Key
-			if (io.KeyCtrl && ImGui::IsKeyDown(83)) {  // S=83 und S= 564  | RCtrl=531 LCtrl=527, ModCtrl=641 
-				fs::path imgPath;
+			if(io.KeyCtrl && ImGui::IsKeyDown(83)) {  // S=83 und S= 564  | RCtrl=531 LCtrl=527, ModCtrl=
 				fs::path cwd = fs::current_path();
 				save_key = true;
 			}
 			// saving the results on CTRL + D Key
-			if (io.KeyCtrl && ImGui::IsKeyPressed(68)) {
+			if(io.KeyCtrl && ImGui::IsKeyPressed(68)) {
 				int return_code = SaveLabels(files_in_path, seperateMasks, current_img_path, tex_shader_res_view, image_width, image_height, mask_postfix);
 				//save_key = false;
 			}
 
-			if (ImGui::IsKeyPressed(71)) {  // G Key pressed --> pick color !
+			if(ImGui::IsKeyPressed(71)) {  // G Key pressed --> pick color !
 				// take the pixel value form the mouse position if it is over the screen
-				if (isHovered) {
+				if(isHovered) {
 					ImVec2 hoveredPixel = { (mousePositionRelative.x / (float)zoom.current),
 											 (mousePositionRelative.y / (float)zoom.current) };
 					pickColor(hoveredPixel, (float*)&clear_color);
 					pickColor(hoveredPixel, (float*)&picked_color);
 				}
-			}
-			else if (ImGui::IsKeyPressed(82)) {// R Key to reset 
+			} else if(ImGui::IsKeyPressed(82)) {// R Key to reset 
 				poly.Reset();
 				dragging_point = -1;
 				marker.Reset();
@@ -496,61 +491,53 @@ int main(int, char**) {
 				// reset the image as well 
 				reset_gui = true;
 
-			}
-			else if (ImGui::IsKeyPressed(70)) {// F Key to change the fill box
+			} else if(ImGui::IsKeyPressed(70)) {// F Key to change the fill box
 				fill_inner_pixels = !fill_inner_pixels;
 				// do trigger evaluation 
 				evaluate = true;
 			}
 
 
-			if (ImGui::IsMouseReleased(ImGuiMouseButton_Right) || (ImGui::IsKeyReleased(83) & !io.KeyCtrl)) { // S key without control
+			if(ImGui::IsMouseReleased(ImGuiMouseButton_Right) || (ImGui::IsKeyReleased(83) & !io.KeyCtrl)) { // S key without control
 				evaluate = true;
-			}
-			else if (ImGui::IsKeyPressed(65)) {   // A Key --> Add segmentation result to current class 
+			} else if(ImGui::IsKeyPressed(65)) {   // A Key --> Add segmentation result to current class 
 				int confirmedSegResult = -1;
 
-				if (current_draw_shape == MarkerPointsD) {
+				if(current_draw_shape == MarkerPointsD) {
 					confirmedSegResult = addMaskToClassregion(overwrite_classes, true);
-				}
-				else { // not watershed
+				} else { // not watershed
 					confirmedSegResult = addMaskToClassregion(overwrite_classes, false, multipleClassLabels);
 					// draw region only if adding was successfull (and flag is set)
-					if (disp_region_after_adding && confirmedSegResult >= 0) drawClassRegion = true;
+					if(disp_region_after_adding && confirmedSegResult >= 0) drawClassRegion = true;
 				}
 
-				if (confirmedSegResult != 0) {
+				if(confirmedSegResult != 0) {
 					show_message = true;
 					WarningMessage = "An error adding the segmented region to the class region. Maybe there is no image left. Could not add region\n";
 				}
-			}
-			else if (ImGui::IsKeyPressed(90) && io.KeyCtrl) { // Strg + Z Key to undo 
+			} else if(ImGui::IsKeyPressed(90) && io.KeyCtrl) { // Strg + Z Key to undo 
 				LabelState::Instance().Undo();
 				// display the changes after the undo step (to show difference to user)
 				drawClassRegion = true;
 				ImPar.drawAllClasses = true;
-			}
-			else if (ImGui::IsKeyPressed(68)) {  // D key
+			} else if(ImGui::IsKeyPressed(68)) {  // D key
 				drawClassRegion = true;
-			}
-			else if (ImGui::IsKeyReleased(81)) { // Q key
+			} else if(ImGui::IsKeyReleased(81)) { // Q key
 				drawClassRegion = true;
 				ImPar.drawAllClasses = true;
-			}
-			else if (ImGui::IsKeyPressed(67) && current_draw_shape == CutsD) {  // C key
+			} else if(ImGui::IsKeyPressed(67) && current_draw_shape == CutsD) {  // C key
 				use_grabcut = true;
 				evaluate = true;
-			}
-			else {
+			} else {
 				drawClassRegion = false;
-				if (ImGui::IsKeyPressed(77) || ImGui::IsKeyPressed(69)) { // M key = 77 or E key = 69
+				if(ImGui::IsKeyPressed(77) || ImGui::IsKeyPressed(69)) { // M key = 77 or E key = 69
 					use_floodfill = true;
 					f_point = mousePositionRelative;
 					evaluate = true; // set evalue to trigger CV 
 				}
 			}
 
-			if (ImGui::IsKeyPressed(72)) {
+			if(ImGui::IsKeyPressed(72)) {
 				display_help_window = !display_help_window;
 			}
 
@@ -571,59 +558,58 @@ int main(int, char**) {
 
 			static bool* p_open = new bool{ true };
 			ImGui::Begin("Change State of Labeling", p_open,
-				ImGuiWindowFlags_HorizontalScrollbar |
-				ImGuiWindowFlags_AlwaysAutoResize);
+						 ImGuiWindowFlags_HorizontalScrollbar |
+						 ImGuiWindowFlags_AlwaysAutoResize);
 			const char* items[] = { "RGB", "HSV" };
-			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-									   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
+					const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+											   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
+			
 			static int colorspace = 0;
 
 			static int active_class = LabelState::Instance().GetActiveClass();
 
 			ImGui::Combo("active class: ", &active_class, n_classes, IM_ARRAYSIZE(n_classes));
-			if (active_class != LabelState::Instance().GetActiveClass()) { // change classes via GUI
-				if (LabelState::Instance().ChangeActiveClass(active_class))
+			if(active_class != LabelState::Instance().GetActiveClass()) { // change classes via GUI
+				if(LabelState::Instance().ChangeActiveClass(active_class))
 					std::cout << "switched class to " << active_class << " (via gui) \n";
 			}
 			// Combobox for shape drawing
 			ImGui::Combo("Shape / Procedure", &current_draw_shape, drawshape,
-				IM_ARRAYSIZE(drawshape));
+						 IM_ARRAYSIZE(drawshape));
 			ImGui::NewLine();
 
 			ImGui::Combo("colorspace (upper boundary)", &colorspace, items,
-				IM_ARRAYSIZE(items));
+						 IM_ARRAYSIZE(items));
 			ImGui::SliderInt("Hue or R upper boundary", &h_tol, 0, 255);
 			ImGui::SliderInt("Saturation or G upper boundary", &s_tol, 0, 255);
 			ImGui::SliderInt("Value or B tolerance", &v_tol, 0, 255);
 
 			// reset the other shapes if switched
 			// ResetShapes(); 
-			if (last_draw_shape != current_draw_shape) {
-				if (current_draw_shape != PolygonD) {  // reset polygon
+			if(last_draw_shape != current_draw_shape) {
+				if(current_draw_shape != PolygonD) {  // reset polygon
 					poly.Reset();
 					dragging_point = -1;
 				}
-				if (current_draw_shape != RectangleD) {  // reset rect
+				if(current_draw_shape != RectangleD) {  // reset rect
 					draw_rect.Reset();
 				}
-				if (current_draw_shape != CircleD) {  // reset circle
+				if(current_draw_shape != CircleD) {  // reset circle
 					circ.Reset();
 				}
-				if (current_draw_shape != BrushD) { // reset brush
+				if(current_draw_shape != BrushD) { // reset brush
 					brush_point_details.clear();
-				}
-				else if (standard_brush_sizes) brush_rad = 10; // reset brush radius (DS: Maybe there is a better way here)
-				if (current_draw_shape != MarkerPointsD) {  // reset Points for polygon and makers					
+				} else if(standard_brush_sizes) brush_rad = 10; // reset brush radius (DS: Maybe there is a better way here)
+				if(current_draw_shape != MarkerPointsD) {  // reset Points for polygon and makers					
 					dragging_point = -1;
 					marker.Reset();
 				}
-				if (current_draw_shape != ArcD) {  // reset arc
+				if(current_draw_shape != ArcD) {  // reset arc
 					ell.points.clear();
 				}
-				if (current_draw_shape != CutsD) {
+				if(current_draw_shape != CutsD) {
 					brush_point_details.clear();
-				}
-				else if (standard_brush_sizes) brush_rad = 6; // reset brush radius so it is more suited for grabCut
+				} else if(standard_brush_sizes) brush_rad = 6; // reset brush radius so it is more suited for grabCut
 				LabelState::Instance().drawingFinished = false;
 				last_draw_shape = current_draw_shape;
 			}
@@ -632,30 +618,30 @@ int main(int, char**) {
 			// get HSV values
 			float out_h, out_s, out_v;
 			ImGui::ColorConvertRGBtoHSV(picked_color[0], picked_color[1],
-				picked_color[2], out_h, out_s, out_v);
+										picked_color[2], out_h, out_s, out_v);
 
 			ImGui::SliderFloat("Alpha to display class", &alpha, 0.0f, 1.0f);
 			ImGui::NewLine();
 			ImGui::Checkbox("Fill region", &fill_inner_pixels);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Fill all pixel that are completely inside the region resulting from the processing operation.");
 			ImGui::SameLine();
 
 			ImGui::Checkbox("Overwrite other classes", &overwrite_classes);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("If set the current class overwrites all other class pixels at the same location.\n For Watershed marker points usually all masks are overwritten");
 
 			ImGui::SliderInt("Radius of the Brush in Pixels", &brush_rad, 1, 40);
 
 
-			if (colorspace == 0)
+			if(colorspace == 0)
 				ImPar.setRGB(picked_color[0], picked_color[1], picked_color[2], h_tol,
-					s_tol, v_tol, alpha);
+							 s_tol, v_tol, alpha);
 			else
 				ImPar.setHSV(out_h, out_s, out_v, h_tol, s_tol, v_tol, alpha);
 
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-				1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+						1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 			ImGui::Text("Current zoom ratio = %.2f", zoom.current);
 			ImGui::NewLine();
 
@@ -663,57 +649,53 @@ int main(int, char**) {
 #pragma region BottonsForImageInteraction
 
 			// Save results and load new image
-			if (ImGui::Button("Save Result") || save_key) {
+			if(ImGui::Button("Save Result") || save_key) {
 				int return_code = SaveLabels(files_in_path, seperateMasks, current_img_path, tex_shader_res_view, image_width, image_height, mask_postfix);
 
 				// load the next image 
-				if (return_code == 0) {
-					if (counter_gui >= num_files_in_folder || counter_gui == 0) {
+				if(return_code == 0) {
+					if(counter_gui >= num_files_in_folder || counter_gui == 0) {
 						WarningMessage = "All images processed. Please load another image or choose another directory.";
 						show_message = true;
-					}
-					else {
+					} else {
 						current_img_path = files_in_path.at(counter_gui);
 						int ret = LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
-						if (ret == -1) {  // there was a problem loading the image ! - 1/24 does not occur anymore
+						if(ret == -1) {  // there was a problem loading the image ! - 1/24 does not occur anymore
 							WarningMessage = "An error occured loading the image into the display";
 							show_message = true;
-						}
-						else if (ret == 1) {
+						} else if(ret == 1) {
 							WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 							show_message = true;
 						}
 						labelTimer = Timer(); // reset the label timer
 					}
 					counter_gui++;
-				}
-				else {
+				} else {
 					WarningMessage = "An error occured saving the result image";
 					show_message = true;
 				}
 			}
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Save the mask and load the next image.");
 			ImGui::SameLine(0.0f, 20);
 
-			if (ImGui::ArrowButton("##previous", ImGuiDir_Left) && files_in_path.size() > 0
-				|| (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))) {
+			if(ImGui::ArrowButton("##previous", ImGuiDir_Left) && files_in_path.size() > 0
+			   || (ImGui::IsKeyPressed(ImGuiKey_LeftArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))) {
 				int newIndex = counter_gui - 1;
 				int index = counter_gui > 0 ? counter_gui - 1 : 0;
 				std::string filename;
 				// continue from the back of the labeled images - load in circle
-				if (index < 1) {
+				if(index < 1) {
 					counter_gui = num_files_in_folder;
 					filename = files_in_path.at(num_files_in_folder - 1);
-				}
-				else {
+				} else {
 					counter_gui--;
 					filename = files_in_path.at(counter_gui - 1);
 				}
 
 				try {
 					current_img_path = filename;
-					int ret= LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
+					int ret = LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
 					if(ret == 1) {
 						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 						show_message = true;
@@ -726,33 +708,31 @@ int main(int, char**) {
 					ImPar.drawAllClasses = true;
 					labelTimer = Timer(); // reset the label timer
 				}
-				catch (std::exception& e) {
+				catch(std::exception& e) {
 					// maybe instead show message box with error					 
 					std::cout << e.what() << "\n";
 				}
 
 			}
 			ImGui::SameLine(0.0f, 5);
-			if (ImGui::ArrowButton("##next", ImGuiDir_Right) && files_in_path.size() > 0 || 
-				(ImGui::IsKeyPressed(ImGuiKey_RightArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
-				) {
+			if(ImGui::ArrowButton("##next", ImGuiDir_Right) && files_in_path.size() > 0 ||
+			   (ImGui::IsKeyPressed(ImGuiKey_RightArrow) && ImGui::IsKeyDown(ImGuiKey_ModCtrl))
+			   ) {
 				// if number higher than last img - start again
-				if (counter_gui + 1 > num_files_in_folder) {
+				if(counter_gui + 1 > num_files_in_folder) {
 					counter_gui = 1;
-				}
-				else {
+				} else {
 					counter_gui++;
-				} 
+				}
 				// try to load the next file
 				try {
 					// get filename
 					current_img_path = files_in_path.at(counter_gui - 1); // counter already incremented
 					int ret = LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
-					if (ret == 1) {
+					if(ret == 1) {
 						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 						show_message = true;
-					}
-					else if (ret == -1) {
+					} else if(ret == -1) {
 						WarningMessage = "An error occured loading the image.";
 						show_message = true;
 					}
@@ -761,7 +741,7 @@ int main(int, char**) {
 					ImPar.drawAllClasses = true;
 					labelTimer = Timer(); // reset the label timer
 				}
-				catch (std::exception& e) {
+				catch(std::exception& e) {
 					// maybe instead show message box with error					 
 					std::cout << e.what() << "\n";
 				}
@@ -773,20 +753,19 @@ int main(int, char**) {
 			ImGui::Text("Switch to image number: ");
 			static int im_num;
 			// Text box to load a specific number e.g. to continue labeling after n images
-			if (ImGui::InputInt(" ", &im_num, 1, 10, ImGuiInputTextFlags_EnterReturnsTrue)
-				&& num_files_in_folder > 0) { // only evaluate if a folder with files was loaded
-				if (im_num < 1) im_num = 1;
-				if (im_num > num_files_in_folder) im_num = num_files_in_folder;
+			if(ImGui::InputInt(" ", &im_num, 1, 10, ImGuiInputTextFlags_EnterReturnsTrue)
+			   && num_files_in_folder > 0) { // only evaluate if a folder with files was loaded
+				if(im_num < 1) im_num = 1;
+				if(im_num > num_files_in_folder) im_num = num_files_in_folder;
 				// load the n-th file
 				counter_gui = im_num;
 				try {
 					current_img_path = files_in_path.at(im_num - 1); // counter already incremented
 					int ret = LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
-					if (ret == 1) {
+					if(ret == 1) {
 						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 						show_message = true;
-					}
-					else if (ret == -1) {
+					} else if(ret == -1) {
 						WarningMessage = "An error occured loading the image.";
 						show_message = true;
 					}
@@ -795,21 +774,21 @@ int main(int, char**) {
 					ImPar.drawAllClasses = true;
 					labelTimer = Timer(); // reset the label timer
 				}
-				catch (std::exception& e) {
+				catch(std::exception& e) {
 					// maybe instead show message box with error					 
 					std::cout << e.what() << "\n";
 				}
 			}
 
-			if (ImGui::Button("Select Folder")) {  // Buttons return true when clicked 
+			if(ImGui::Button("Select Folder")) {  // Buttons return true when clicked 
 				std::string current_dir = fs::current_path().string();
 				std::string selected_dir = BrowseFolder(current_dir);
 
-				if (selected_dir != "") {
+				if(selected_dir != "") {
 					files_in_path = getAllImagesInPath(selected_dir);
 					num_files_in_folder = files_in_path.size();
 
-					if (num_files_in_folder < 1) {
+					if(num_files_in_folder < 1) {
 						WarningMessage = "No images found! Please select a folder that contains images";
 						show_message = true;
 						counter_gui = 0; // set counter to 0 - Maybe do not change
@@ -818,11 +797,10 @@ int main(int, char**) {
 					else {
 						current_img_path = files_in_path.at(0); // choose first image
 						int ret = LoadImageAndMask(current_img_path, tex_shader_res_view, g_pd3dDevice, image_width, image_height, seperateMasks, mask_postfix);
-						if (ret == 1) {
+						if(ret == 1) {
 							WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 							show_message = true;
-						}
-						else if (ret == -1) {
+						} else if(ret == -1) {
 							WarningMessage = "An error occured loading the image.";
 							show_message = true;
 						}
@@ -833,57 +811,73 @@ int main(int, char**) {
 				}
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("Select image")) {
+			if(ImGui::Button("Select image")) {
 				std::string current_dir = fs::current_path().string();
 				std::string selected_path;
 				bool isImageFile = BrowseImageFile(current_dir, selected_path);
-				if (isImageFile) {
+				if(isImageFile) {
 					current_img_path = selected_path;
 
 					counter_gui = 1; // 0 would also work here
 					num_files_in_folder = 1;
 					bool ret = LoadTextureFromFile(current_img_path.c_str(),
-						&tex_shader_res_view, &image_width,
-						&image_height, g_pd3dDevice);
+												   &tex_shader_res_view, &image_width,
+												   &image_height, g_pd3dDevice);
 
 				}
 			}
-			if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Select one specific image to label."); }
+			if(ImGui::IsItemHovered()) { ImGui::SetTooltip("Select one specific image to label."); }
 #pragma endregion BottonsForImageInteraction
 
 
 			ImGui::Checkbox("Expert options", &expert_window);
 			ImGui::SameLine();
 			ImGui::Checkbox("Display Help", &display_help_window);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Opens help window. Can also be opened and closed with H key.");
+
+			if(show_img_name) {
+				std::string img_name = current_img_path.c_str();
+				img_name = img_name.substr(img_name.find_last_of("/\\") + 1);
+				ImGui::Text(img_name.c_str()); 
+				 
+				if(ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+					ImVec2 mousePos = ImGui::GetMousePos();
+					ImVec2 itemMin = ImGui::GetItemRectMin();
+					ImVec2 itemMax = ImGui::GetItemRectMax();
+
+					// check if the mouse position is within the bounds of the text
+					if(mousePos.x >= itemMin.x && mousePos.x <= itemMax.x &&
+					   mousePos.y >= itemMin.y && mousePos.y <= itemMax.y) { 
+						ImGui::SetClipboardText(img_name.c_str());
+					}
+				}
+			}
 
 
 			// switch to draw shape on pushing T
-			if ( (io.KeyCtrl && ImGui::IsKeyPressed(84)) || ImGui::IsKeyPressed(ImGuiKey_P) ) {
+			if((io.KeyCtrl && ImGui::IsKeyPressed(84)) || ImGui::IsKeyPressed(ImGuiKey_P)) {
 				show_timer_window = !show_timer_window;
-			}
-			else if (ImGui::IsKeyPressed(84)) { // T Key to switch shape
+			} else if(ImGui::IsKeyPressed(84)) { // T Key to switch shape
 				int shape_num = current_draw_shape + 1;
 				int num_shapes = sizeof(drawshape) / 8; // sizeof() gives size in bytes
 				current_draw_shape = shape_num % num_shapes;
 				std::cout << current_draw_shape;
 			}
 			// if no key for CV or other control is pressed, check for class numbers
-			else if (ImGui::IsKeyDown(220) || ImGui::IsKeyDown(594)) { // ^ Key or ` Key (left to 1)
+			else if(ImGui::IsKeyDown(220) || ImGui::IsKeyDown(594)) { // ^ Key or ` Key (left to 1)
 				active_class = 0; // switch to background (easy/quick)
-			}
-			else {
-				for (ImGuiKey key = 48; key <= 58; key++) { // 48 = 0 to 57 = 9
-					if (ImGui::IsKeyPressed(key)) {
+			} else {
+				for(ImGuiKey key = 48; key <= 58; key++) { // 48 = 0 to 57 = 9
+					if(ImGui::IsKeyPressed(key)) {
 						active_class = key - 48; // classes 0-9
-						if (ImGui::IsKeyDown(ImGuiKey_LeftAlt)) {
+						if(ImGui::IsKeyDown(ImGuiKey_LeftAlt)) {
 							ImGui::SameLine();
 							ImGui::Text("\"%s\" %d", ImGui::GetKeyName(key), key);
 							std::string debugstr = ImGui::GetKeyName(key);
 							active_class += 10;// classes 10-19
 						} // classes 20 -29 may be added with Shift or Ctrl
-						if (LabelState::Instance().ChangeActiveClass(active_class))
+						if(LabelState::Instance().ChangeActiveClass(active_class))
 							std::cout << "switched class to " << active_class << "\n";
 					}
 				}
@@ -895,10 +889,10 @@ int main(int, char**) {
 
 
 		// Timer window - optional
-		if (show_timer_window) {
+		if(show_timer_window) {
 			ImGui::Begin("Time current Label", &show_timer_window, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
-			double elapsed_time = labelTimer.GetTimeInSeconds();			 
+			double elapsed_time = labelTimer.GetTimeInSeconds();
 			// Convert elapsed time to minutes and seconds
 			int minutes = static_cast<int>(elapsed_time) / 60;
 			int seconds = static_cast<int>(elapsed_time) % 60;
@@ -907,22 +901,21 @@ int main(int, char**) {
 			std::ostringstream oss;
 			oss << minutes << ":" << (seconds < 10 ? "0" : "") << seconds;
 
-			ImGui::SetWindowFontScale(1.7f); 
+			ImGui::SetWindowFontScale(1.7f);
 			// Use color stack to change text color after a certain interval 
-			if (elapsed_time > 60.0 *5) {
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.31f, 1.0f)); 
-				ImGui::Text("%s", oss.str().c_str());  
+			if(elapsed_time > 60.0 * 5) {
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.5f, 0.31f, 1.0f));
+				ImGui::Text("%s", oss.str().c_str());
 				ImGui::PopStyleColor();  // Pop color to revert to the default color
-			}
-			else {
+			} else {
 				ImGui::Text("%s", oss.str().c_str());  // default color
-			} 
+			}
 			ImGui::End();
-		} 
+		}
 
 
 		// Help/Instructions Window
-		if (display_help_window) {
+		if(display_help_window) {
 			// If the program has never been started before display this windows at lower right
 			ImGui::SetNextWindowPos(ImVec2(1920 * 0.65, 1080 * 0.55), ImGuiCond_FirstUseEver);
 			//ImGui::SetNextWindowSize(ImVec2(demo_window_size_x, demo_window_size_y), ImGuiCond_FirstUseEver);
@@ -987,12 +980,12 @@ int main(int, char**) {
 		static bool ff_use_gray = false;
 		static bool show_keys_pressed = false;
 
-		if (expert_window) {
+		if(expert_window) {
 			ImGui::Begin("Expert Window", &expert_window); //	ImGuiWindowFlags_HorizontalScrollbar | nImGuiWindowFlags_AlwaysAutoResize); 
 			ImGui::Text("Floodfill (Magic Wand) parameters");
 			ImGui::Combo("method ", &current_fill_mode, ff_fill_mode,
-				IM_ARRAYSIZE(ff_fill_mode));
-			if (ImGui::IsItemHovered())
+						 IM_ARRAYSIZE(ff_fill_mode));
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Select which method for the filling you want to use.\n For fixed range the lower boundary around 20 and upper boundary around 40 usually lead to good results.");
 
 			ImGui::SliderInt("lower boundary", &low, 1, 200);
@@ -1001,7 +994,7 @@ int main(int, char**) {
 			low = up < low ? std::max(0, up - 1) : low;
 
 			ImGui::Checkbox("use Gray Image", &ff_use_gray);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Decide if you want to use the gray image (instead of RGB one) for applying the filling.");
 			ImGui::NewLine();
 
@@ -1009,7 +1002,7 @@ int main(int, char**) {
 			static bool closeRegion = false;
 
 			ImGui::Text("Morphological smooth region");
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("This parameter applys a morphological closing to the mask region. Is currently for rectangle only and EXPERIMENTAL!");
 			ImGui::Checkbox("Apply", &closeRegion);
 			ImGui::SliderInt("size of kernel radius ", &kernel_size, 1, 11);
@@ -1019,7 +1012,7 @@ int main(int, char**) {
 			ImGui::NewLine();
 			ImGui::Text("Distance to snap clicked point to the edge");
 			ImGui::SliderInt("Distance in Pixels", &snap_to_border_distance, 0, 20);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("This parameter defines at which distance from the borders the drawn points are snapped to the border.\n For example, if this value is 3 and the user clicks on the pixel (2, 100), the edge point of the rectangle will be set to (0, 100).");
 
 			/*	Stub for future implementation
@@ -1028,24 +1021,24 @@ int main(int, char**) {
 					ImGui::SetTooltip("If set, explicitly set background pixels are not overwritten by other classes (just like any other class.");*/
 			ImGui::NewLine();
 			ImGui::Checkbox("Use standard brush sizes", &standard_brush_sizes);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("As default the size of the brush points is reset to 6 when grab cut is chosen and to 10 for pixel brush.");
 
 			ImGui::NewLine();
 			ImGui::Text("Zoom factor (per mouse wheel step)");
 			//ImGui::SliderFloat("zoom factor", &zoom.factor, 0.05, 0.5);
-			if (ImGui::InputFloat(" ", &zoom.factor, 0.01, 0.1, "%.2f")) {
-				if (zoom.factor < 0.01) zoom.factor = 0.01; // maybe change to 0.005
-				else if (zoom.factor > 1.0) zoom.factor = 1.0;
+			if(ImGui::InputFloat(" ", &zoom.factor, 0.01, 0.1, "%.2f")) {
+				if(zoom.factor < 0.01) zoom.factor = 0.01; // maybe change to 0.005
+				else if(zoom.factor > 1.0) zoom.factor = 1.0;
 			}
 			// Create a slider to adjust the font scale factor
-			if (ImGui::SliderFloat("Font Scale (global)", &font_scale, 0.5f, 2.0f, "%.1f")) {
+			if(ImGui::SliderFloat("Font Scale (global)", &font_scale, 0.5f, 2.0f, "%.1f")) {
 				ImGuiIO& io = ImGui::GetIO();
 				io.FontGlobalScale = font_scale; // Apply the scale factor to ImGui
 			}
 			ImGui::NewLine();
 			ImGui::Checkbox("Show active region after adding to it", &disp_region_after_adding);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Is like pressing D to display the active region after having pressed A to add the temporary sementation result to the active region.");
 			ImGui::NewLine();
 
@@ -1054,7 +1047,7 @@ int main(int, char**) {
 			ImGui::InputText("suffix", suffix_mask, IM_ARRAYSIZE(suffix_mask));
 			ImGui::SameLine();
 			ImGui::TextDisabled("(?)");
-			if (ImGui::IsItemHovered()) {
+			if(ImGui::IsItemHovered()) {
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 				ImGui::TextUnformatted("This text is added at the end of the mask's filename e.g. _mask (Default). Remove if you want the mask to have the same name as the image.");
@@ -1066,12 +1059,15 @@ int main(int, char**) {
 
 
 			ImGui::Checkbox("Save Classes seperately ", &seperateMasks);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Save each mask in a seperate (binary 0 or 255) file instead of one PNG.\nEnable this option AND the multiple class labels flag if you want a pixel to be able to belong to multiple class labels (like car and tire).");
 			ImGui::Checkbox("Enable multiple (ambiguous) class label for pixels", &multipleClassLabels);
-			if (ImGui::IsItemHovered())
+			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Allow each Pixel to have more than one label (like part and scratch). \nEnable this option to be able to assign more than one label to each pixel. \nThe overwrite other pixels label is then ignored and only the background class can be used to reset class labels. \nMultiple labels can only be saved correctly if the Save Classes seperately option is active.");
-			//ImGui::NewLine(); 
+			ImGui::NewLine();
+			ImGui::Checkbox("Display image name", &show_img_name);
+			if(ImGui::IsItemHovered())
+				ImGui::SetTooltip("Displays the name of the currently loaded image. Allows you to copy the filename with a right click on it.");
 			//ImGui::Checkbox("Display Keys pressed", &show_keys_pressed);
 			//if (show_keys_pressed) {
 			//	ImGui::Text("Keys pressed:");
@@ -1091,15 +1087,15 @@ int main(int, char**) {
 
 
 		// Passing CV parameters
-		if (evaluate) {
+		if(evaluate) {
 			CreateImageProcParam(current_draw_shape, draw_rect, ImPar, poly, zoom.current, marker, brush_point_details,
-				position_correction, circ, f_point, current_fill_mode, low, up, ff_use_gray);
+								 position_correction, circ, f_point, current_fill_mode, low, up, ff_use_gray);
 		}
 
 		// Execute computer vision algorithm(s) and copy the resulting image to the texture
-		if ((LabelState::Instance().drawingFinished && evaluate)
-			|| drawClassRegion
-			|| reset_gui) {
+		if((LabelState::Instance().drawingFinished && evaluate)
+		   || drawClassRegion
+		   || reset_gui) {
 
 #pragma region M1 : MAP_FROM_DEVICE_CONTEXT
 			/* Documentation:
@@ -1132,45 +1128,40 @@ int main(int, char**) {
 
 			// Do the computer vision
 			cv::UMat updatedTexCV;
-			if (drawClassRegion) {
-				if (ImPar.drawAllClasses) {
+			if(drawClassRegion) {
+				if(ImPar.drawAllClasses) {
 					updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, DisplayAllClasses);
 					ImPar.drawAllClasses = false; // reset 
-				}
-				else {
+				} else {
 					updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, DisplayClass);
 				}
-			}
-			else if (current_draw_shape == CutsD) {
+			} else if(current_draw_shape == CutsD) {
 				CvOperation OP = GrabCut; // only one of the two
 				updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, GrabCut);
 				use_grabcut = false;
-			}
-			else if (use_floodfill) {
+			} else if(use_floodfill) {
 				CvOperation OP = Floodfill;
 
-				if (fill_inner_pixels) {
+				if(fill_inner_pixels) {
 					OP = (CvOperation)(FillMask | OP);
 				}
 				updatedTexCV =
 					ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				use_floodfill = false;
-			}
-			else if (reset_gui) {
+			} else if(reset_gui) {
 				CvOperation OP = Clear;
 				updatedTexCV =
 					ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				reset_gui = false;
-			}
-			else  // default apply CV
+			} else  // default apply CV
 			{
 				CvOperation OP = Threshold;
-				if (fill_inner_pixels) {
+				if(fill_inner_pixels) {
 					OP = (CvOperation)(FillMask | OP);
 				}
 				updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				// clear brush after adding
-				if (ImPar.roi_shape == BrushD) {
+				if(ImPar.roi_shape == BrushD) {
 					brush_point_details.clear();
 				}
 			}
@@ -1181,7 +1172,7 @@ int main(int, char**) {
 			auto pitchINfoRow = mappedTex.RowPitch;
 
 			// pay attention to add the fourth channel !!
-			if (updatedTexCV.channels() != 4) {
+			if(updatedTexCV.channels() != 4) {
 				cv::cvtColor(updatedTexCV, updatedTexCV, cv::COLOR_BGR2RGBA);
 			}
 			// else color channel order should be already correct here!
@@ -1197,7 +1188,7 @@ int main(int, char**) {
 			int count = 0;
 			const uint32_t pixelSize = sizeof(desc.Format);
 			const uint32_t srcPitch = pixelSize * desc.Width;
-			for (int i = 0; i < desc.Height; i++) {
+			for(int i = 0; i < desc.Height; i++) {
 				// copying should actually be done on the mapped Ressource
 				std::memcpy(dst, src, desc.Width * 4);
 
@@ -1251,7 +1242,7 @@ int main(int, char**) {
 			clear_color.z * clear_color.w, clear_color.w };
 		g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
 		g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView,
-			clear_color_with_alpha);
+												   clear_color_with_alpha);
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		g_pSwapChain->Present(1, 0);  // Present with vsync - DS: limits to monitor's refresh rate (60Hz)
@@ -1306,7 +1297,7 @@ bool CreateDeviceD3D(HWND hWnd) {
 		D3D_FEATURE_LEVEL_10_0,
 	};
 	// DS: create device and swap chain --> DX11 works with two buffer (back- and front-) images are rendered to the backbuffer, then the buffers are swapped
-	if (D3D11CreateDeviceAndSwapChain(
+	if(D3D11CreateDeviceAndSwapChain(
 		NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags,
 		featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain,
 		&g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext) != S_OK)
@@ -1318,15 +1309,15 @@ bool CreateDeviceD3D(HWND hWnd) {
 
 void CleanupDeviceD3D() {
 	CleanupRenderTarget();
-	if (g_pSwapChain) {
+	if(g_pSwapChain) {
 		g_pSwapChain->Release();
 		g_pSwapChain = NULL;
 	}
-	if (g_pd3dDeviceContext) {
+	if(g_pd3dDeviceContext) {
 		g_pd3dDeviceContext->Release();
 		g_pd3dDeviceContext = NULL;
 	}
-	if (g_pd3dDevice) {
+	if(g_pd3dDevice) {
 		g_pd3dDevice->Release();
 		g_pd3dDevice = NULL;
 	}
@@ -1336,12 +1327,12 @@ void CreateRenderTarget() {
 	ID3D11Texture2D* pBackBuffer;
 	g_pSwapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
 	g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL,
-		&g_mainRenderTargetView);
+										 &g_mainRenderTargetView);
 	pBackBuffer->Release();
 }
 
 void CleanupRenderTarget() {
-	if (g_mainRenderTargetView) {
+	if(g_mainRenderTargetView) {
 		g_mainRenderTargetView->Release();
 		g_mainRenderTargetView = NULL;
 	}
@@ -1349,9 +1340,9 @@ void CleanupRenderTarget() {
 
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
-	UINT msg,
-	WPARAM wParam,
-	LPARAM lParam);
+															 UINT msg,
+															 WPARAM wParam,
+															 LPARAM lParam);
 // Win32 message handler
 // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell
 // if dear imgui wants to use your inputs.
@@ -1364,21 +1355,21 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd,
 // "AddMouseButtonEvent" in imgui_impl_win32.cpp leads here when mouse button
 // is clicked
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
+	if(ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return true;
 
-	switch (msg)  // 258
+	switch(msg)  // 258
 	{
 	case WM_SIZE:
-		if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED) {
+		if(g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED) {
 			CleanupRenderTarget();
 			g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam),
-				(UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN,
-				0);
+										(UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN,
+										0);
 			CreateRenderTarget();
 		}
 		return 0;
 	case WM_SYSCOMMAND:
-		if ((wParam & 0xfff0) == SC_KEYMENU)  // Disable ALT application menu
+		if((wParam & 0xfff0) == SC_KEYMENU)  // Disable ALT application menu
 			return 0;
 		break;
 	case WM_MBUTTONUP:  // middle mouse button 
