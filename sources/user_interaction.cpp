@@ -273,10 +273,10 @@ void CreateImageProcParam(int current_draw_shape, DrawRect& draw_rect, ImageProc
 
 	std::vector<std::pair<int, int>> _dummy;
 	if(current_draw_shape == RectangleD) {		
-		int points[4] = { draw_rect.left / current_zoom, 
-			draw_rect.top / current_zoom,  
-			draw_rect.right / current_zoom,	
-			draw_rect.bottom / current_zoom }; 
+		int points[4] = { (int) (draw_rect.left / current_zoom), 
+			(int)(draw_rect.top / current_zoom),
+			(int)(draw_rect.right / current_zoom),
+			(int)(draw_rect.bottom / current_zoom) };
 		ImPar.addROI(points, std::vector<std::pair<int, int>>(), current_draw_shape);
 	} else if(current_draw_shape == PolygonD) {
 		// conversion from ImVec2 to std::pair

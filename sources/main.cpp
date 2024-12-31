@@ -27,9 +27,9 @@
 
 #include <iostream>
 #include <filesystem>
-#include <opencv2/core/directx.hpp>
-#include <opencv2/core/ocl.hpp>
-#include <opencv2/imgproc.hpp>
+#include <core/directx.hpp>
+#include <core/ocl.hpp>
+#include <imgproc.hpp>
 
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
@@ -561,9 +561,9 @@ int main(int, char**) {
 						 ImGuiWindowFlags_HorizontalScrollbar |
 						 ImGuiWindowFlags_AlwaysAutoResize);
 			const char* items[] = { "RGB", "HSV" };
-					const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 											   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
-			
+			//const char* n_classes[] = { "Hintergrund", "Pruefobjekt", "Unterspritzung", "Flash", "Schlieren", "Dieseleffekt" };
 			static int colorspace = 0;
 
 			static int active_class = LabelState::Instance().GetActiveClass();
@@ -669,7 +669,8 @@ int main(int, char**) {
 						}
 						labelTimer = Timer(); // reset the label timer
 					}
-					counter_gui++;
+					if (counter_gui < num_files_in_folder)
+						counter_gui++;
 				} else {
 					WarningMessage = "An error occured saving the result image";
 					show_message = true;
@@ -988,9 +989,15 @@ int main(int, char**) {
 			if(ImGui::IsItemHovered())
 				ImGui::SetTooltip("Select which method for the filling you want to use.\n For fixed range the lower boundary around 20 and upper boundary around 40 usually lead to good results.");
 
-			ImGui::SliderInt("lower boundary", &low, 1, 200);
-			up = low > up ? std::min(low + 1, 255) : up;
-			ImGui::SliderInt("upper boundary", &up, 1, 255);
+			// sliders need to be named differently/uniquely - use ## not to display it in the gui 
+			if(ImGui::Button("-##Low")) low--; ImGui::SameLine();
+			if(ImGui::Button("+##Low")) low++; ImGui::SameLine();
+			ImGui::SliderInt("Lower Boundary", &low, 1, 155); 
+			up = low > up ? std::min(low + 1, 155) : up;
+
+			if(ImGui::Button("-##Up")) up--; ImGui::SameLine();
+			if(ImGui::Button("+##Up")) up++; ImGui::SameLine();
+			ImGui::SliderInt("Upper Boundary", &up, 1, 156);
 			low = up < low ? std::max(0, up - 1) : low;
 
 			ImGui::Checkbox("use Gray Image", &ff_use_gray);

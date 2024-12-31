@@ -22,9 +22,9 @@
 
 #pragma once
 #include "imgui.h"
-#include "opencv2/core.hpp"
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/core/directx.hpp>
+#include "core.hpp"
+#include "imgcodecs.hpp"
+#include "core/directx.hpp"
 #include <vector>
 #include "helper.h"
 #include <iostream> //todo: remove
