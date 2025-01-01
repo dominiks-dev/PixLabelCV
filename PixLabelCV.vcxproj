@@ -112,6 +112,11 @@
       <AdditionalLibraryDirectories>lib\Debug;$(DXSDK_DIR)/Lib/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(ProjectDir)lib\Debug\opencv_core490d.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)lib\Debug\opencv_imgproc490d.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)lib\Debug\opencv_imgcodecs490d.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -151,6 +156,11 @@
       <AdditionalLibraryDirectories>$(DXSDK_DIR)/Lib/x64;lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <SubSystem>Console</SubSystem>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y /d "$(ProjectDir)lib\Release\opencv_core490.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)lib\Release\opencv_imgproc490.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)lib\Release\opencv_imgcodecs490.dll" "$(OutDir)"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="sources\imgui\imconfig.h" />
