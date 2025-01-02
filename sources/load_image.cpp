@@ -19,16 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with PixLabelCV. If not, see <http://www.gnu.org/licenses/>.
  */
+#pragma once
 #include"load_image.h"
-#include"opencv2/core.hpp"
-#include"opencv2/imgcodecs.hpp"
-#include"opencv2/core/directx.hpp"
-#include"opencv2/imgproc.hpp"
 
 #include "LabelState.h"
 
-static cv::Mat CreateDefaultTextImg(std::string text = "No image loaded. Please select a folder with images to label or a single image using the buttons in the menu."
-) {
+cv::Mat CreateDefaultTextImg(std::string text) {
 	if(text == "" || text == " ")
 		text = "No message specified";
 
@@ -97,10 +93,9 @@ bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_sr
 	cv::Mat image = LabelState::Instance().load_new_image(filename); // clone is done at loading
 	//cv::Mat DBG_image = image.getMat(cv::ACCESS_READ);  
 
-	auto DBG_tet = image.empty(); 
+	bool DBG_tet = image.empty(); 
 	if( DBG_tet){ 
 		image = CreateDefaultTextImg(); 
-		auto DBG_seppl = true;
 	}
  
     image_height = image.rows; 

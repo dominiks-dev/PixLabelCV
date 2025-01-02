@@ -32,6 +32,7 @@
 #include "Timer.h"
 #include "imgui.h"
 #include "shapes.h"
+#include "load_image.h"
 
 using namespace cv;
 using namespace std;
@@ -151,6 +152,17 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 	int height = img.rows;
 	int width = img.cols;
 	UMat image_rgba;
+
+	// if image was deleted meanwhile - or other failures occured
+    if (height <= 0 && width <= 0) {
+        img = CreateDefaultTextImg(
+			"There is no image here. Probably it was removed!?")
+			.getUMat(ACCESS_RW); 
+        UMat imgToDisplay = img.clone(); 
+		cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
+		return image_rgba; 
+	}	
+
 	// reset temp classPixelMask !
 	tempMask = cv::UMat::zeros(LabelState::Instance().h(), LabelState::Instance().w(), CV_8U);
 	UMat classPixelMask; 
@@ -438,7 +450,6 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 		// copy result in ROI to Display image and add alpha
 		imgRoi.copyTo(imgToDisplay(RectRoi));
 		cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
-
 	}
 #pragma endregion Threshold
 
@@ -771,6 +782,8 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 		UMat imgToDisplay = img.clone();
 		cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
 	}
+
+    //cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
 	// Note: no need to Stop() the timer here, as the object gets destroyed at the end of the function
 	return image_rgba;
 }

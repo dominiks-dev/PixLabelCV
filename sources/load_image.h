@@ -23,6 +23,11 @@
 #include <d3d11.h>
 #include <codecvt> // for wstring_convert 
 #include <filesystem>
+#include"opencv2/core.hpp"
+#include"opencv2/imgcodecs.hpp"
+#include"opencv2/core/directx.hpp"
+#include"opencv2/imgproc.hpp"
+
 namespace fs = std::filesystem;
 
 bool LoadTextureFromFile(const char* filename, ID3D11ShaderResourceView** out_srv, int* out_width, int* out_height, ID3D11Device* g_pd3dDevice);
@@ -53,3 +58,6 @@ int SaveLabels(const std::vector<std::string>& files_in_path, bool save_classes_
 			   ID3D11ShaderResourceView*& tex_shader_res_view, int image_width, int image_height, const std::string& mask_postfix);
 int LoadImageAndMask(const std::string& current_img_path, ID3D11ShaderResourceView*& tex_shader_res_view, ID3D11Device* g_pd3dDevice,
 					  int& image_width, int& image_height, bool seperate_masks, const std::string& mask_postfix);
+cv::Mat CreateDefaultTextImg( std::string text =
+        "No image loaded. Please select a folder with images to label or a "
+        "single image using the buttons in the menu.");

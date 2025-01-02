@@ -199,7 +199,7 @@ int main(int, char**) {
 	static float alpha = 0.5;
 	static bool expert_window;
 	static bool display_help_window = false;
-	static bool show_img_name = false;
+	static bool show_img_name = true;
 	static bool is_drawing = false;
 	static bool reset_gui = false;
 	static bool save_key = false;
@@ -560,10 +560,11 @@ int main(int, char**) {
 			ImGui::Begin("Change State of Labeling", p_open,
 						 ImGuiWindowFlags_HorizontalScrollbar |
 						 ImGuiWindowFlags_AlwaysAutoResize);
-			const char* items[] = { "RGB", "HSV" };
+			const char* items[] = { "RGB", "HSV" }; 
 			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 											   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
 			//const char* n_classes[] = { "Hintergrund", "Pruefobjekt", "Unterspritzung", "Flash", "Schlieren", "Dieseleffekt" };
+ 
 			static int colorspace = 0;
 
 			static int active_class = LabelState::Instance().GetActiveClass();
@@ -700,7 +701,7 @@ int main(int, char**) {
 					if(ret == 1) {
 						WarningMessage = "A mask with the specified postfix \'" + mask_postfix + "\' did not exist. But a mask with the same name as the image was found and loaded.";
 						show_message = true;
-					} else if(ret == -1) {
+					} else if(ret <= -1) {
 						WarningMessage = "An error occured loading the image.";
 						show_message = true;
 					}
