@@ -242,9 +242,9 @@ bool LabelState::ChangeActiveClass(int class_number) {
 	if(class_number < 0 || class_number > 19) return false;
 	activeClass = class_number;
 	// add mask regions to the result, if there are not enough yet
-	if(labeledMasks().size() < class_number + 1) {
+	if(labeledMasks().size() < static_cast<size_t>(class_number + 1) ) {
 		// class 0 is background so we need one more
-		while(labeledMasks().size() < class_number + 1) {
+        while(labeledMasks().size() < static_cast<size_t>(class_number + 1)) {
 			labeledMasks().push_back(cv::UMat::zeros(height, width, CV_8U));
 		}
 	}
@@ -259,69 +259,69 @@ int LabelState::addRegionToClass(cv::UMat newRegion, bool overwrite_existing, bo
 		return -2;
 	}
 	if(newRegion.empty()) return -3;
+
 	// start timer
 	Timer timer1 = Timer();
 
 	// get a copy of the current labelMask
 	auto newState = CopyCurrentState();
+	bool state_changed= false; // to prevent pushing the same state twice
 
-	// check which masks exist and are not empty
+	// Check for and do changes of all (other) class masks
 	for(int i = 0; i < newState.size(); i++) {
-		if(i == activeClass) continue; // skip current class for performance 
+		if(i == activeClass) continue; // skip comparison of currently active class for performance - as it is changed anyway
 
 		UMat classMask = newState.at(i);
 		UMat intersection;
 		cv::bitwise_and(classMask, newRegion, intersection);
-		std::vector<cv::Point2i> locations;
-		// get locations of non-zero pixels in the intersection of the current class and the new 
-		//cv::findNonZero(intersection, locations); // TODO: remove if possible
+		// get non-zero pixels in the intersection of the current class region and the newRegion
 		int non_zeros = cv::countNonZero(intersection);
 
-		// check if there are any points (pixels) in the i-th mask that are not zero
-		if(non_zeros > 0) {
+		// only do somthing for class i if it's mask is different
+		if(non_zeros > 0) { 
 			// Background: remove this region from all other class masks - This has to be done even when multiple lables are allowed
 			if(activeClass == 0) {
-				UMat region_to_keep;
-				//  cv::bitwise_and, cv::bitwise_or and cv::bitwise_xor on binary images:
+				UMat RegionToKeep; 
 				// region to keep is classMask minus intersection 
-				cv::bitwise_xor(classMask, intersection, region_to_keep);
-				newState.at(i) = region_to_keep; // |= would be wrong here
-				//UMat b = classMask.mul(intersection); // just testing 
+				cv::bitwise_xor(classMask, intersection, RegionToKeep);
+				newState.at(i) = RegionToKeep; // |= would be wrong here				
 			}
-			// 
+			// Remove the pixels that already belong to other classes from the new (active) region, so they are not added when only one label per pixel is allowed				
 			else if(multiplePixelLabelsAllowed == false &&
 					overwrite_existing == false &&
-					i != 0) { // current class is not background
-				// Remove the pixels the already belong to other classes from the new (active) region, so they are not added when only one label per pixel is allowed
-				// result is new region - pixels already belonging to the i-th class
-				//Timer timer_for_loop = Timer();
+					i != 0) { // current class is not background                
+				// result is newRegion without pixels already belonging to the i-th class, so changes are tracked below 
 				cv::bitwise_xor(newRegion, intersection, newRegion);
-				std::cout << "timer for loop adding class pixels: ";
-				timer1.Stop();
-				// RemoveFrom(locations, newRegion);				
 			}
-			// Background or overwrite class: remove the pixels that do not belong to the  
+			// remove the pixels that are overwritten by the active class from background or when overwriting classes
 			else if((multiplePixelLabelsAllowed == false &&
 					overwrite_existing == true) || i == 0) {
-				UMat region_to_keep;
-				// region to keep is classMask minus intersection
-				cv::bitwise_xor(classMask, intersection, region_to_keep);
-				//labeledMasks().at(0) = region_to_keep; // DS 18.1. remove when working
-				newState.at(i) = region_to_keep;
+				UMat RegionToKeep;
+				// region to keep is classMask minus intersection 
+				cv::bitwise_xor(classMask, intersection, RegionToKeep);
+				newState.at(i) = RegionToKeep;
 			}
-
-		}
-	}
+		} // changes in class mask i
+	} // for loop - all classes
 
 	// add resulting region to current class
-	//labeledMasks.at(activeClass) |= newRegion; // only Mat
+	//labeledMasks.at(activeClass) |= newRegion; // only for Mat 
 	UMat result;
-	cv::bitwise_or(newState.at(activeClass), newRegion, result);
-	newState.at(activeClass) = result;
+    cv::bitwise_or(newState.at(activeClass), newRegion, result);
 
-	pushState(newState);
+	// check for changes in the activeClass - this is valid for all cases (MAYBE except when background is active and no other class was touched) 
+	// norm inf calculats the max difference of each corresponding pixels of the Mats
+    double maxDiff = cv::norm(newState.at(activeClass), result, cv::NORM_INF); 
+	if (maxDiff > 0) state_changed = true; // if maxDiff is 0 the arrays are identical 
 
-	std::cout << " add region to class " << activeClass << " took: ";
+	// only push a new state when it differs from the last one
+    if (state_changed) {
+        newState.at(activeClass) = result;
+		pushState(newState);
+		std::cout << " add region to class " << activeClass << " took: ";
+    } else {    
+		std::cout << " no change needed for class" << activeClass << " time: "; 
+    }
 
 	return 0;
 }
@@ -373,7 +373,7 @@ bool LabelState::Undo() {
 		std::cerr << "No history available for undo." << std::endl;
 		return false;
 	}
-
+	// just switch index of the state array
 	currentIndex = (currentIndex - 1 + capacity) % capacity;
 	std::cout << "index = " << currentIndex << "\n";
 	return true;
