@@ -57,13 +57,13 @@ static std::vector<cv::Vec3b> colors2 = {
 	cv::Vec3b(124, 25, 134),   // Purple
 	cv::Vec3b(234, 31, 89),    // Red
 	cv::Vec3b(134, 234, 111),  // Lime
-	cv::Vec3b(132, 151, 115),  // Oliv
-	cv::Vec3b(29, 251, 221),   // Turquoise
 	cv::Vec3b(255, 163, 6),    // Orange
+	cv::Vec3b(29, 251, 221),   // Turquoise
 	cv::Vec3b(99, 99, 198),    // Blue
 	cv::Vec3b(255, 255, 102),  // yellow
-	cv::Vec3b(255, 235, 205),  // Blanched Almond
 	cv::Vec3b(255, 29, 206),    // Pink / hot margenta
+	cv::Vec3b(255, 235, 205),  // Blanched Almond
+	cv::Vec3b(132, 151, 115),  // Oliv
 	cv::Vec3b(205, 92, 92),    // Indian Red
 	cv::Vec3b(30, 144, 255),   // Dodger Blue
 	cv::Vec3b(184, 134, 11),   // Dark Goldenrod

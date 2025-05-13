@@ -563,7 +563,7 @@ int main(int, char**) {
 			const char* items[] = { "RGB", "HSV" }; 
 			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 											   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
-			//const char* n_classes[] = { "Hintergrund", "Pruefobjekt", "Unterspritzung", "Flash", "Schlieren", "Dieseleffekt" };
+			/*const char* n_classes[] = { "Hintergrund", "Pruefobjekt", "Einfallstelle", "Flash", "Schlieren", "Dieseleffekt" };*/
  
 			static int colorspace = 0;
 
