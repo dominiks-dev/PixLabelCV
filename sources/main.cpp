@@ -202,6 +202,7 @@ int main(int, char**) {
 	static bool show_img_name = true;
 	static bool is_drawing = false;
 	static bool reset_gui = false;
+	static bool replace_class = false;
 	static bool save_key = false;
 	const char* drawshape[] = { "Rectangle", "Polygon", "Circle", "Brush", "Watershed", "Graph Cut" }; // ,"Arc" };
 	static int current_draw_shape = 0;
@@ -231,6 +232,7 @@ int main(int, char**) {
 	static bool show_message = false;
 	static std::string WarningMessage = "None";
 	static bool show_timer_window = false;
+	static bool open_replace_class_window = false;
 	static Timer labelTimer = Timer();
 
 
@@ -471,7 +473,6 @@ int main(int, char**) {
 				int return_code = SaveLabels(files_in_path, seperateMasks, current_img_path, tex_shader_res_view, image_width, image_height, mask_postfix);
 				//save_key = false;
 			}
-
 			if(ImGui::IsKeyPressed(71)) {  // G Key pressed --> pick color !
 				// take the pixel value form the mouse position if it is over the screen
 				if(isHovered) {
@@ -480,7 +481,7 @@ int main(int, char**) {
 					pickColor(hoveredPixel, (float*)&clear_color);
 					pickColor(hoveredPixel, (float*)&picked_color);
 				}
-			} else if(ImGui::IsKeyPressed(82)) {// R Key to reset 
+			} else if(ImGui::IsKeyPressed(82) && !io.KeyCtrl) {// R Key to reset 
 				poly.Reset();
 				dragging_point = -1;
 				marker.Reset();
@@ -491,21 +492,30 @@ int main(int, char**) {
 				// reset the image as well 
 				reset_gui = true;
 
-			} else if(ImGui::IsKeyPressed(70)) {// F Key to change the fill box
+			} else if (ImGui::IsKeyPressed(ImGuiKey_O)) { // O Key to overwrite other classes
+                overwrite_classes = !overwrite_classes;
+            } else if (ImGui::IsKeyPressed(70)) { // F Key to change the fill box
 				fill_inner_pixels = !fill_inner_pixels;
 				// do trigger evaluation 
 				evaluate = true;
-			}
+			}else 
 
 
-			if(ImGui::IsMouseReleased(ImGuiMouseButton_Right) || (ImGui::IsKeyReleased(83) & !io.KeyCtrl)) { // S key without control
+			// reassign class mask - if button was pushed before 
+            if (replace_class) {
+				// TODO: check if multiple class labels still work here
+				int confirmedSegResult = addMaskToClassregion(overwrite_classes = true, false, multipleClassLabels); 
+				replace_class = false; 
+            } 
+			else if(ImGui::IsMouseReleased(ImGuiMouseButton_Right) || (ImGui::IsKeyReleased(83) & !io.KeyCtrl)) { // S key without control
 				evaluate = true;
-			} else if(ImGui::IsKeyPressed(65)) {   // A Key --> Add segmentation result to current class 
+			} else if(ImGui::IsKeyPressed(ImGuiKey_A))  {   // A Key --> Add segmentation result to current class 
 				int confirmedSegResult = -1;
 
 				if(current_draw_shape == MarkerPointsD) {
 					confirmedSegResult = addMaskToClassregion(overwrite_classes, true);
-				} else { // not watershed
+				} 					
+				else { // not watershed
 					confirmedSegResult = addMaskToClassregion(overwrite_classes, false, multipleClassLabels);
 					// draw region only if adding was successfull (and flag is set)
 					if(disp_region_after_adding && confirmedSegResult >= 0) drawClassRegion = true;
@@ -520,7 +530,9 @@ int main(int, char**) {
 				// display the changes after the undo step (to show difference to user)
 				drawClassRegion = true;
 				ImPar.drawAllClasses = true;
-			} else if(ImGui::IsKeyPressed(68)) {  // D key
+			} else if( ImGui::IsKeyPressed(82) && io.KeyCtrl) {// Strg + R Key to open a window for replace all pixels of a class with another	
+				open_replace_class_window = !open_replace_class_window;
+			}else if(ImGui::IsKeyPressed(68)) {  // D key
 				drawClassRegion = true;
 			} else if(ImGui::IsKeyReleased(81)) { // Q key
 				drawClassRegion = true;
@@ -563,13 +575,13 @@ int main(int, char**) {
 			const char* items[] = { "RGB", "HSV" }; 
 			const char* n_classes[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
 											   "11", "12", "13", "14", "15", "16", "17", "18", "19" };
-			/*const char* n_classes[] = { "Hintergrund", "Pruefobjekt", "Einfallstelle", "Flash", "Schlieren", "Dieseleffekt" };*/
+			//const char* n_classes[] = { "Hintergrund", "Pruefobjekt", "Einfallstelle", "Flash", "Schlieren", "Dieseleffekt" };
  
 			static int colorspace = 0;
 
 			static int active_class = LabelState::Instance().GetActiveClass();
 
-			ImGui::Combo("active class: ", &active_class, n_classes, IM_ARRAYSIZE(n_classes));
+			ImGui::Combo("active class", &active_class, n_classes, IM_ARRAYSIZE(n_classes));
 			if(active_class != LabelState::Instance().GetActiveClass()) { // change classes via GUI
 				if(LabelState::Instance().ChangeActiveClass(active_class))
 					std::cout << "switched class to " << active_class << " (via gui) \n";
@@ -915,6 +927,24 @@ int main(int, char**) {
 			ImGui::End();
 		}
 
+		// Class replacement window 
+		if (open_replace_class_window) {
+            //ImGui::Begin("Change class label", &show_timer_window, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+            ImGui::Begin("Change class label", &open_replace_class_window, ImGuiWindowFlags_NoCollapse || ImGuiWindowFlags_AlwaysAutoResize);
+			std::string infoTxt = "Select a class index and push the button to reassign all it's pixels in the selected area to the active class.";
+            ImGui::TextWrapped(infoTxt.c_str()); 
+			static int classlabel_to_replace = 0;
+            ImGui::InputInt("Class to replace ", &classlabel_to_replace, 1, 29, ImGuiInputTextFlags_AlwaysOverwrite);
+             
+            if (ImGui::Button("Replace with active class")) { 
+                ImPar.replaceClass(classlabel_to_replace); 
+				replace_class = true;  
+				evaluate = true;
+            } 
+			ImGui::TextWrapped("Reassignment is done automatically. Strg + Z to undo."); 
+			ImGui::End();
+		}
+
 
 		// Help/Instructions Window
 		if(display_help_window) {
@@ -1161,8 +1191,11 @@ int main(int, char**) {
 				updatedTexCV =
 					ApplyCVOperation(ImPar, (float*)&picked_color, OP);
 				reset_gui = false;
-			} else  // default apply CV
-			{
+			} else if (replace_class) {
+				// add class mask to replace in the current ROI to the new (temporary class mask) 
+				// next frame it is added automatically to the new state
+                updatedTexCV = ApplyCVOperation(ImPar, (float*)&picked_color, ReplaceClass); 
+			} else {  // default apply CV			
 				CvOperation OP = Threshold;
 				if(fill_inner_pixels) {
 					OP = (CvOperation)(FillMask | OP);

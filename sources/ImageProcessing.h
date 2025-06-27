@@ -46,7 +46,8 @@ enum CvOperation {
 	DisplayAllClasses = 1 << 4,            // display all labeled classes
 	Watershed = 1 <<5, 
 	GrabCut = 1 << 6,   
-	Clear = 1 << 7                   // Clear Points ?
+	Clear = 1 << 7,                   // Clear displayed img
+	ReplaceClass = 1 << 8                  
 
 };
 
@@ -257,6 +258,8 @@ struct FF { // floodfill parameters
 };
 
 struct ImageProcParameters {
+    int pixelClassToReplace;
+
 	int up_HorR;
 	int up_SorG;
 	int up_VorB;
@@ -373,6 +376,9 @@ struct ImageProcParameters {
 	}
 	void addMousePt(ImVec2 mousePosition) {
 		m_point = cv::Point(mousePosition.x, mousePosition.y);
+	}
+    void replaceClass(int classNr) { 
+			pixelClassToReplace = classNr < 30 ? classNr : 0;
 	}
 
 };

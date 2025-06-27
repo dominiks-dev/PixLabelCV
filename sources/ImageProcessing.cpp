@@ -167,8 +167,9 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 	tempMask = cv::UMat::zeros(LabelState::Instance().h(), LabelState::Instance().w(), CV_8U);
 	UMat classPixelMask; 
 
-#pragma region Threshold
-	if((op & Threshold) == Threshold) {
+#pragma region ThresholdOrReplace
+	// ReplaceClass is not to be used with Threshold flag
+	if((op & Threshold) == Threshold || (op == ReplaceClass) ) {
 		Rect RectRoi;
 		UMat imgRoi;
 		UMat circleMask;  // only for circle
@@ -185,29 +186,38 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 			if (RectRoi.width == 0) RectRoi.width = 1;
 			if (RectRoi.height == 0) RectRoi.height = 1;
  
-			// Work on the current Region Only
+			// Work on the current Region only
 			imgRoi = img(RectRoi).clone();
 
-			if(params.isHSV) {
-				int low_h = floor(params.H * 180 + 0.5);
-				int low_s = floor(params.S * 255 + 0.5);
-				int low_v = floor(params.V * 255 + 0.5);
-				UMat imgRoiHSV;
-				// Convert from BGR to HSV colorspace
-				cvtColor(imgRoi, imgRoiHSV, COLOR_BGR2HSV);
+			if (op == ReplaceClass) {
+                // get the label 
+				UMat oldclass = LabelState::Instance().GetClassRegion(params.pixelClassToReplace);
+                // add the label to the currently selected class mask
+                classPixelMask = oldclass(RectRoi).clone();
+            } 
+			else { // threshold
 
-				// Detect the object based on HSV Range Values
-				inRange(imgRoiHSV, Scalar(low_h, low_s, low_v),
-						Scalar(floor(params.up_HorR * 180 / 255 + 0.5), params.up_SorG,
-						params.up_VorB), classPixelMask);
-			} else {
-				// apply segmentation to the image region
-				inRange(imgRoi, Scalar(thresh_b, thresh_g, thresh_r),
-						Scalar(params.up_VorB, params.up_SorG, params.up_HorR),
-						classPixelMask);
+				if(params.isHSV) {
+					int low_h = floor(params.H * 180 + 0.5);
+					int low_s = floor(params.S * 255 + 0.5);
+					int low_v = floor(params.V * 255 + 0.5);
+					UMat imgRoiHSV;
+					// Convert from BGR to HSV colorspace
+					cvtColor(imgRoi, imgRoiHSV, COLOR_BGR2HSV);
+
+					// Detect the object based on HSV Range Values
+					inRange(imgRoiHSV, Scalar(low_h, low_s, low_v),
+							Scalar(floor(params.up_HorR * 180 / 255 + 0.5), params.up_SorG,
+							params.up_VorB), classPixelMask);
+				} else {
+					// apply segmentation to the image region
+					inRange(imgRoi, Scalar(thresh_b, thresh_g, thresh_r),
+							Scalar(params.up_VorB, params.up_SorG, params.up_HorR),
+							classPixelMask);
+				}
+				if((op & FillMask) == FillMask)
+					fill_mask(classPixelMask);
 			}
-			if((op & FillMask) == FillMask)
-				fill_mask(classPixelMask);
 
 			// save the classPixelMask correctly to the temporary mask
 			// this mask is the size of the complete image and can be added by the
@@ -244,6 +254,7 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 				morphologyEx(im_morphed, im_morphed, MORPH_OPEN, erodeCirc1); 
 				classPixelMask = im_morphed;
 			}  // END closing
+
 
 			classRegion.setTo(classColor, classPixelMask);
 			addWeighted(classRegion, params.alpha_display, imgRoi,
@@ -314,15 +325,25 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 				UMat circleMask(imgRoi.size(), imgRoi.type(), Scalar::all(0));
 				// with a white, filled circle in it (adjusting for deviation of the mid point)
 				circle(circleMask, Point(radius - deviation_x, radius - deviation_y), radius, Scalar::all(255), -1);
-
-				// DS note: use the whole roi and reduce the region to the circle later! 
-				// apply segmentation to the image region
-				inRange(imgRoi, Scalar(thresh_b, thresh_g, thresh_r),
-						Scalar(params.up_VorB, params.up_SorG, params.up_HorR),
-						classPixelMask);
 				// reduce the mask to one channel - to work for classPixelMask
 				extractChannel(circleMask, circleMask, 0);
-				// reduce the class pixel mask to the cirlce roi only - else black values would also be taken
+
+				// Replace the pixel's labels
+				if (op == ReplaceClass) {
+					// get the label 
+					UMat oldclass = LabelState::Instance().GetClassRegion(params.pixelClassToReplace);					
+					// add the label to the currently selected class mask
+					classPixelMask = oldclass(RectRoi).clone();
+                } 
+				// Thresholding operation on image
+				else {  
+					// DS note: use the whole roi and reduce the region to the circle later! 
+					// apply segmentation to the image region
+					inRange(imgRoi, Scalar(thresh_b, thresh_g, thresh_r),
+							Scalar(params.up_VorB, params.up_SorG, params.up_HorR),
+							classPixelMask);
+				}
+				// limit the class pixel mask to the cirlce roi only - else black values would also be taken
 				//classPixelMask = (classPixelMask & circleMask); // is only overloaded for cv:Mat (not UMat)
 				cv::bitwise_and(classPixelMask, circleMask, classPixelMask);
 
@@ -347,17 +368,29 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 				imgRoi = img(RectRoi).clone();
 
 				polyMask = polyMask(RectRoi);
-				// apply segmentation to the image region
-				inRange(imgRoi, Scalar(thresh_b, thresh_g, thresh_r),
-						Scalar(params.up_VorB, params.up_SorG, params.up_HorR),
-						classPixelMask);
+
+				// Replace the pixel's labels
+				if (op == ReplaceClass) {
+					// get the label 
+					UMat oldclass = LabelState::Instance().GetClassRegion(params.pixelClassToReplace);					
+					// add the label to the currently selected class mask
+					classPixelMask = oldclass(RectRoi).clone();
+                } 
+				// Thresholding operation on image
+				else {
+					// apply segmentation to the image region
+					inRange(imgRoi, Scalar(thresh_b, thresh_g, thresh_r),
+							Scalar(params.up_VorB, params.up_SorG, params.up_HorR),
+							classPixelMask);
+                }
 
 				// reduce the class pixel mask to the cirlce roi only - else black values would also be taken
 				// classPixelMask = (classPixelMask & polyMask);
 				cv::bitwise_and(classPixelMask, polyMask, classPixelMask);
 			}
 
-			if((op & FillMask) == FillMask)
+            // still works as ReplaceClass is the only input flag when used
+			if((op & FillMask) == FillMask)  
 				fill_mask(classPixelMask);
 
 			// save the current segmentation results temporarly
@@ -376,9 +409,8 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 			classRegion.setTo(classColor, classPixelMask);
 			addWeighted(classRegion, params.alpha_display, imgRoi,
 						(1.0 - params.alpha_display), 0.0, imgRoi);
-
 			// imgRoi = imgRoi | (Mask & roi);
-		}
+		} // circle or polygon
 
 		// implementation of watershed on whole image
 		else if(params.roi_shape == MarkerPointsD) {
@@ -670,7 +702,8 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 		UMat imgToDisplay = result.getUMat(ACCESS_FAST);
 		cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
 
-	} else if((op & DisplayClass) == DisplayClass) {
+	} 
+	else if((op & DisplayClass) == DisplayClass) {
 		bool completeImage = false;
 		if(completeImage) {
 			// A) Display of the resulting mask incl. alpha in the class color over the whole image
@@ -718,7 +751,8 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 			imgRoi.copyTo(imgToDisplay(Min_Rect));
 			cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
 		}
-	} else if((op & DisplayAllClasses) == DisplayAllClasses) {
+	} 
+	else if((op & DisplayAllClasses) == DisplayAllClasses) {
 
 		UMat imgToDisplay = img.clone();
 		int num_classes = LabelState::Instance().MasksSize() - 1;
@@ -778,10 +812,11 @@ cv::UMat ApplyCVOperation(ImageProcParameters params, float* color, CvOperation 
 		std::cout << "display all classes ";
 	}
 	else if ( (op & Clear) == Clear) { // e.g. op == Clear for reseting displayed image
-
+	 
 		UMat imgToDisplay = img.clone();
 		cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
 	}
+	
 
     //cv::cvtColor(imgToDisplay, image_rgba, cv::COLOR_BGR2RGBA);
 	// Note: no need to Stop() the timer here, as the object gets destroyed at the end of the function
